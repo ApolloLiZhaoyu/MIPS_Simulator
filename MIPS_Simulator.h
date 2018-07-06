@@ -25,17 +25,10 @@ private:
 
 public:
 	MIPS_Simulator_Class() {
-
-		mem = new char[Max_Size];
-		memset(mem, 0, Max_Size);
-
 		state = 0;
-
 	}
 
-	~MIPS_Simulator_Class() {
-		delete mem;
-	}
+	~MIPS_Simulator_Class() { }
 
 	void execute(fstream &code) {
 		read(code);

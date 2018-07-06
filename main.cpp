@@ -1,13 +1,12 @@
+#include <cstring>
 #include "MIPS_Simulator.h"
 
 using namespace std;
 
 MIPS_Simulator_Class mips_simulaotor;
-//map <string, int> op_type;
 map <string, int> regname;
 map <string, int> label;
 map <string, int> op_num;
-//vector <TokenScanner> expline;
 
 enum op_type {
 	Add = 1, Addu, Addiu, Sub, Subu, Mul, Mulu, Div, Divu, Xor, Xoru, REM, REMU,
@@ -31,6 +30,9 @@ char *mem;
 int mem_pos = 0;
 
 void init() {
+	mem = new char[Max_Size];
+	memset(mem, 0, Max_Size);
+
 	reg[29].data = Max_Size - 1;
 	// 1 : 算数与逻辑指令，有三个运算数;          2 ： 算数与逻辑指令，有两个运算数;
 	// 3 : 常数操作指令;                        4 ： 比较指令;
@@ -235,6 +237,6 @@ int main(int argc, char *argv[] ) {
 	mips_simulaotor.execute(fin);
 
 	fin.close();
-
+	delete mem;
 	return 0;
 }

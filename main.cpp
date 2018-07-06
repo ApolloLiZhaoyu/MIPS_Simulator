@@ -227,18 +227,14 @@ int main(int argc, char *argv[] ) {
 	cin.tie(0);
 	cout.tie(0);
 
-	string file_path;
-	//getline(cin, file_path);
-	fstream fin("30.s");
+	string file_path = argv[1];
+	fstream fin(file_path);
 
 	init();
 
-	if (!fin) {
-		cerr << "Open Failed!!!";
-	}
-	else mips_simulaotor.execute(fin);
+	mips_simulaotor.execute(fin);
+
 	fin.close();
 
-	system("pause");
 	return 0;
 }

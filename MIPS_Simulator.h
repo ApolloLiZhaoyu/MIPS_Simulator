@@ -1,8 +1,10 @@
 #pragma once
 #include <iostream>
 #include <fstream>
+#include <cstring>
 #include <string>
 #include <map>
+#include <deque>
 #include <vector>
 #include <cmath>
 #include "Parser.h"
@@ -32,6 +34,7 @@ public:
 
 	void execute(fstream &code) {
 		read(code);
+
 		pipeline();
 	}
 
@@ -121,6 +124,7 @@ public:
 		else {
 			cerr << "Wrong Expression!!!" << '\n';
 		}
+		return;
 	}
 
 	bool interprete_text(string &str) {
@@ -146,24 +150,7 @@ public:
 		else return true;
 	}
 
-	void read(fstream &code) {
-
-		string tokenline;
-
-		while (getline(code, tokenline)) {
-
-			if (state == 0) {
-				interprete_data(tokenline);
-			}
-			else {
-				if (interprete_text(tokenline)) {
-					codeline.push_back(tokenline);
-				}
-			}
-		}
-	}
-
-	void pipeline() {
+	void interprete_codeline() {
 
 		//for (auto x : codeline) cout << x << '\n';
 
@@ -180,7 +167,7 @@ public:
 			string r1 = get_phrase(x, pos);
 			string r2 = get_phrase(x, pos);
 			string r3 = get_phrase(x, pos);
-			
+
 			if ((op == "mul" || op == "mulu" || op == "div" || op == "divu") && r3 == "") {
 				op = 'r' + op;
 			}
@@ -338,23 +325,94 @@ public:
 
 		}
 
-		//for (auto x : expline) cout << x << endl;
+		return;
+	}
 
-		Pipeline_Class pipeline;
+	void read(fstream &code) {
+
+		string tokenline;
+
+		while (getline(code, tokenline)) {
+
+			if (state == 0) {
+				interprete_data(tokenline);
+			}
+			else {
+				if (interprete_text(tokenline)) {
+					codeline.push_back(tokenline);
+				}
+			}
+		}
+
+		interprete_codeline();
+		return;
+	}
+
+	void pipeline() {
+
+		deque <Pipeline_Class> five_pipeline;
 
 		reg[34].data = label["main"];
 
-		while (pipeline.state) {
-			//cout << reg[34].data << '\n';
+		bool run = true;
 
-			pipeline.Instruction_Fetch(reg[34].data, expline[reg[34].data]);
-			pipeline.Instruction_Decode_And_Data_Preparation();
-			pipeline.Execution();
-			pipeline.Memory_Access();
-			pipeline.Write_Back();
-			
-			//pipeline.print();
+		int wait = 0;
+
+		while(run) {
+			//cout << "流水线中有 " << five_pipeline.size() << "条语句!!!" << endl;
+
+			pipeline_state[4] = 0;
+
+			for (auto &nowpipe : five_pipeline) {
+
+				//cout << nowpipe.nowline << endl;
+
+				//cout << codeline[nowpipe.nowline] << endl;
+				if (nowpipe.step == 4) {
+					nowpipe.Write_Back();
+					//cout << "Finish Write_Back !!!" << endl;
+					//cout << "pipeline_state[5] = " << pipeline_state[5] << endl;
+					five_pipeline.pop_front();
+				}
+				else if (nowpipe.step == 3) {
+					nowpipe.Memory_Access();
+					//cout << "Finish Memory_Access !!!" << endl;
+				}
+				else if (nowpipe.step == 2) {
+					nowpipe.Execution();
+					if (nowpipe.state == 0) {
+						run = 0;
+						break;
+					}
+					//cout << "Finish Execution !!!" << endl;
+				}
+				else if (nowpipe.step == 1) {
+					nowpipe.Instruction_Decode_And_Data_Preparation();
+					if (pipeline_state[2] == 2) {
+						nowpipe.step = 1;
+						wait++;
+						//cout << "Stop Instruction_Decode_And_Data_Preparation !!!" << endl;
+					}
+					//else cout << "Finish Instruction_Decode_And_Data_Preparation !!!" << endl;
+				}
+			}
+
+			//cout << "pipeline_state[0] = " << pipeline_state[0] << " wait = " << wait << " pipeline_state[4] = " << pipeline_state[4] << endl;
+		//	Pipeline_Class c;
+		//	c.print();
+
+			if (pipeline_state[0] == 1 && wait == 0 && pipeline_state[4] == 0) {
+				Pipeline_Class nextpipe;
+				//cout << reg[34].data << endl;
+				//cout << codeline[reg[34].data] << endl;
+				nextpipe.Instruction_Fetch(reg[34].data, expline[reg[34].data]);
+				five_pipeline.push_back(nextpipe);
+				//cout << "Finish Instruction_Fetch !!!" << endl;
+			}
+
+			if(wait > 0) wait--;
 		}
+		return;
 	}
 
 	inline bool isregname(string &str) {

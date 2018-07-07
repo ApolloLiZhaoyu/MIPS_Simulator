@@ -17,6 +17,9 @@ extern struct Register reg[];
 extern int mem_pos;
 extern vector <TokenScanner> expline;
 
+int pipeline_state[6] = { 1, 0, 0, 0, 0, 1 }; // 0 : 未开始； 1 ： 已执行； 2 ： 停止
+// pipeline_state[0] : 0 : 有分支， 1 : 没分支， 可以IF下一句;
+
 class Pipeline_Class {
 public:
 	TokenScanner exp;
@@ -29,11 +32,13 @@ public:
 	char byte;
 	bool jump = 0;
 	int state = 1; //0 : break; 1 : run;
+	int step = 0;
 	size_t pos = 0;
 
 	Pipeline_Class() { }
 
 	void Instruction_Fetch(int &linenum, TokenScanner &token) {
+		step = 1;
 		nowline = linenum;
 		exp = token;
 		ans = 0;
@@ -45,98 +50,230 @@ public:
 		jump = 0;
 		state = 1;
 		pos = 0;
+		pipeline_state[1] = 1;
+
+		if (exp.op >= 23 && exp.op <= 39) pipeline_state[0] = 0;
+		else {
+			pipeline_state[0] = 1;
+			reg[34].data++;
+		}
 		return;
 	}
 	void Instruction_Decode_And_Data_Preparation() {
-
+		step = 2;
 		if (exp.op >= 1 && exp.op <= 13) {
+			if (reg[exp.num[1]].occupied == 1) {
+				pipeline_state[2] = 2;
+				return;
+			}
+			if (exp.expstate[2] == isreg && reg[exp.num[2]].occupied == 1) {
+				pipeline_state[2] = 2;
+				return;
+			}
 			n1 = exp.num[0];
+			reg[n1].occupied = 1;
 			n2 = reg[exp.num[1]].data;
 			if (exp.expstate[2] == isreg) n3 = reg[exp.num[2]].data;
 			else n3 = exp.num[2];
 		}
 		else if (exp.op >= 14 && exp.op <= 15) {
+			if (reg[exp.num[1]].occupied == 1) {
+				pipeline_state[2] = 2;
+				return;
+			}
 			n1 = exp.num[0];
+			reg[n1].occupied = 1;
 			n2 = reg[exp.num[1]].data;
 		}
 		else if (exp.op == 16) {
 			n1 = exp.num[0];
+			reg[n1].occupied = 1;
 			n2 = exp.num[1];
 		}
 		else if (exp.op >= 17 && exp.op <= 22) {
+			if (reg[exp.num[1]].occupied == 1) {
+				pipeline_state[2] = 2;
+				return;
+			}
+			if (exp.expstate[2] == isreg && reg[exp.num[2]].occupied == 1) {
+				pipeline_state[2] = 2;
+				return;
+			}
 			n1 = exp.num[0];
+			reg[n1].occupied = 1;
 			n2 = reg[exp.num[1]].data;
 			if (exp.expstate[2] == isreg) n3 = reg[exp.num[2]].data;
 			else n3 = exp.num[2];
 		}
 		else if (exp.op >= 23 && exp.op <= 28) {
+			if (reg[exp.num[0]].occupied == 1) {
+				pipeline_state[2] = 2;
+				return;
+			}
+			if (exp.expstate[1] == isreg && reg[exp.num[1]].occupied == 1) {
+				pipeline_state[2] = 2;
+				return;
+			}
 			n1 = reg[exp.num[0]].data;
 			if (exp.expstate[1] == isreg) n2 = reg[exp.num[1]].data;
 			else n2 = exp.num[1];
 			n3 = exp.num[2];
 		}
 		else if (exp.op >= 29 && exp.op <= 34) {
+			if (reg[exp.num[0]].occupied == 1) {
+				pipeline_state[2] = 2;
+				return;
+			}
 			n1 = reg[exp.num[0]].data;
 			n2 = exp.num[1];
 		}
-		else if (exp.op >= 35 && exp.op <= 37) {
+		else if (exp.op >= 35 && exp.op <= 36) {
 			n1 = exp.num[0];
 		}
-		else if (exp.op >= 38 && exp.op <= 39) {
+		else if (exp.op == 37) {
+			reg[31].occupied = 1;
+			n1 = exp.num[0];
+		}
+		else if (exp.op == 38) {
+			if (reg[exp.num[0]].occupied == 1) {
+				pipeline_state[2] = 2;
+				return;
+			}
+			n1 = reg[exp.num[0]].data;
+		}
+		else if (exp.op == 39) {
+			if (reg[exp.num[0]].occupied == 1) {
+				pipeline_state[2] = 2;
+				return;
+			}
+			reg[31].occupied = 1;
 			n1 = reg[exp.num[0]].data;
 		}
 		else if (exp.op >= 40 && exp.op <= 43) {
+			if (exp.expstate[1] == isreg && reg[exp.num[1]].occupied == 1) {
+				pipeline_state[2] = 2;
+				return;
+			}
 			n1 = exp.num[0];
+			reg[n1].occupied = 1;
 		}
 		else if (exp.op >= 44 && exp.op <= 46) {
+			if (reg[exp.num[0]].occupied == 1) {
+				pipeline_state[2] = 2;
+				return;
+			}
+			if (exp.expstate[1] == isreg && reg[exp.num[1]].occupied == 1) {
+				pipeline_state[2] = 2;
+				return;
+			}
 			n1 = reg[exp.num[0]].data;
 		}
 		else if (exp.op == 47) {
+			if (reg[exp.num[1]].occupied == 1) {
+				pipeline_state[2] = 2;
+				return;
+			}
 			n1 = exp.num[0];
+			reg[n1].occupied = 1;
 			n2 = exp.num[1];
 		}
-		else if (exp.op >= 48 && exp.op <= 49) {
+		else if (exp.op == 48) {
+			if (reg[32].occupied == 1) {
+				pipeline_state[2] = 2;
+				return;
+			}
 			n1 = exp.num[0];
+			reg[n1].occupied = 1;
 		}
-		else if (exp.op == 50) {
-
+		else if (exp.op == 49) {
+			if (reg[33].occupied == 1) {
+				pipeline_state[2] = 2;
+				return;
+			}
+			n1 = exp.num[0];
+			reg[n1].occupied = 1;
 		}
+		else if (exp.op == 50) {}
 		else if (exp.op == 51) {
+			if (reg[2].occupied == 1) {
+				pipeline_state[2] = 2;
+				return;
+			}
 			switch (reg[2].data) {
+			case 0:
+				pipeline_state[2] = 2;
+				return;
 			case 1:
+				if (reg[4].occupied == 1) {
+					pipeline_state[2] = 2;
+					return;
+				}
 				n1 = reg[4].data;
-				break;
-			case 2:
-				n1 = reg[4].data;
+
 				break;
 			case 4:
+				if (reg[4].occupied == 1) {
+					pipeline_state[2] = 2;
+					return;
+				}
 				n1 = reg[4].data;
 				break;
+			case 5:
+				reg[2].occupied = 1;
+				break;
 			case 8:
+				if (reg[4].occupied == 1) {
+					pipeline_state[2] = 2;
+					return;
+				}
+				if (reg[5].occupied == 1) {
+					pipeline_state[2] = 2;
+					return;
+				}
 				n1 = reg[4].data;
 				n2 = reg[5].data;
 				break;
 			case 9:
+				if (reg[4].occupied == 1) {
+					pipeline_state[2] = 2;
+					return;
+				}
 				n1 = reg[4].data;
+				reg[2].occupied = 1;
 				break;
 			case 10:
 				break;
 			case 17:
+				if (reg[4].occupied == 1) {
+					pipeline_state[2] = 2;
+					return;
+				}
 				n1 = reg[4].data;
 				break;
 			}
 		}
 		else if (exp.op >= 52 && exp.op <= 55) {
+			if (reg[exp.num[0]].occupied == 1) {
+				pipeline_state[2] = 2;
+				return;
+			}
+			if (reg[exp.num[1]].occupied == 1) {
+				pipeline_state[2] = 2;
+				return;
+			}
 			n1 = reg[exp.num[0]].data;
 			n2 = reg[exp.num[1]].data;
+			reg[32].occupied = 1;
+			reg[33].occupied = 1;
 		}
 
-		//cout << n1 << ' ' << n2 << ' ' << n3 << '\n';
+		pipeline_state[2] = 1;
 		return;
 	}
 	void Execution() {
-		switch (exp.op)	{
-		case 1 :
+		step = 3;
+		switch (exp.op) {
+		case 1:
 			ans = n2 + n3;
 			break;
 		case 2:
@@ -207,11 +344,19 @@ public:
 				jump = 1;
 				tarline = n3;
 			}
+			else {
+				pipeline_state[0] = 1;
+				reg[34].data++;
+			}
 			break;
 		case 24:
 			if (n1 != n2) {
 				jump = 1;
 				tarline = n3;
+			}
+			else {
+				pipeline_state[0] = 1;
+				reg[34].data++;
 			}
 			break;
 		case 25:
@@ -219,11 +364,19 @@ public:
 				jump = 1;
 				tarline = n3;
 			}
+			else {
+				pipeline_state[0] = 1;
+				reg[34].data++;
+			}
 			break;
 		case 26:
 			if (n1 <= n2) {
 				jump = 1;
 				tarline = n3;
+			}
+			else {
+				pipeline_state[0] = 1;
+				reg[34].data++;
 			}
 			break;
 		case 27:
@@ -231,11 +384,19 @@ public:
 				jump = 1;
 				tarline = n3;
 			}
+			else {
+				pipeline_state[0] = 1;
+				reg[34].data++;
+			}
 			break;
 		case 28:
 			if (n1 < n2) {
 				jump = 1;
 				tarline = n3;
+			}
+			else {
+				pipeline_state[0] = 1;
+				reg[34].data++;
 			}
 			break;
 		case 29:
@@ -243,11 +404,19 @@ public:
 				jump = 1;
 				tarline = n2;
 			}
+			else {
+				pipeline_state[0] = 1;
+				reg[34].data++;
+			}
 			break;
 		case 30:
 			if (n1 != 0) {
 				jump = 1;
 				tarline = n2;
+			}
+			else {
+				pipeline_state[0] = 1;
+				reg[34].data++;
 			}
 			break;
 		case 31:
@@ -255,11 +424,19 @@ public:
 				jump = 1;
 				tarline = n2;
 			}
+			else {
+				pipeline_state[0] = 1;
+				reg[34].data++;
+			}
 			break;
 		case 32:
 			if (n1 >= 0) {
 				jump = 1;
 				tarline = n2;
+			}
+			else {
+				pipeline_state[0] = 1;
+				reg[34].data++;
 			}
 			break;
 		case 33:
@@ -267,11 +444,19 @@ public:
 				jump = 1;
 				tarline = n2;
 			}
+			else {
+				pipeline_state[0] = 1;
+				reg[34].data++;
+			}
 			break;
 		case 34:
 			if (n1 < 0) {
 				jump = 1;
 				tarline = n2;
+			}
+			else {
+				pipeline_state[0] = 1;
+				reg[34].data++;
 			}
 			break;
 		case 35:
@@ -332,32 +517,9 @@ public:
 			break;
 		case 51:
 			if (reg[2].data == 1) cout << reg[4].data;
-			else if (reg[2].data == 4) {
-				for (int i = n1; ; i++) {
-					if (mem[i] == 0) break;
-					else cout << mem[i];
-				}
-			}
 			else if (reg[2].data == 5) cin >> ans;
-			else if (reg[2].data == 8) {
-				string tmp;
-				int now_pos = n1;
-				cin >> tmp;
-				for (int i = 0; i < tmp.length(); i++) {
-					mem[now_pos++] = tmp[i];
-				}
-				mem[now_pos++] = '\0';
-			}
-			else if (reg[2].data == 9) {
-				ans = mem_pos;
-				mem_pos += n1;
-			}
-			else if (reg[2].data == 10) {
-				state = 0;
-			}
-			else if (reg[2].data == 17) {
-				state = 0;
-			}
+			else if (reg[2].data == 10) state = 0;
+			else if (reg[2].data == 17) state = 0;
 			break;
 		case 52:
 			ans = n1 * n2;
@@ -379,181 +541,61 @@ public:
 			hinum = n1 % n2;
 			break;
 		}
-		/*if (exp.op == "add") ans = n2 + n3;
-		else if (exp.op == "addu") ans = n2 + n3;
-		else if (exp.op == "addiu") ans = n2 + n3;
-		else if (exp.op == "sub") ans = n2 - n3;
-		else if (exp.op == "subu") ans = n2 - n3;
-		else if (exp.op == "mul") ans = n2 * n3;
-		else if (exp.op == "mulu") ans = n2 * n3;
-		else if (exp.op == "rmul") {
-			ans = n1 * n2;
-			lonum = 0x00000000FFFFFFFF & ans;
-			hinum = 0xFFFFFFFF00000000 & ans;
-			hinum >> 32;
+		pipeline_state[3] = 1;
+		return;
+	}
+	void Memory_Access() {
+		step = 4;
+		pipeline_state[4] = 1;
+
+		if (exp.op == 40) {
+			ans = n2;
+			return;
 		}
-		else if (exp.op == "rmulu") {
-			ans = n1 * n2;
-			lonum = ans & 0x00000000FFFFFFFF;
-			hinum = (ans & 0xFFFFFFFF00000000) >> 32;
+		else if (exp.op == 41) {
+			byte = mem[n2];
+			return;
 		}
-		else if (exp.op == "div") ans = n2 / n3;
-		else if (exp.op == "divu") ans = n2 / n3;
-		else if (exp.op == "rdiv") {
-			lonum = n1 / n2;
-			hinum = n1 % n2;
-			//cout << "rdiv : " << "lonum = " << lonum << " hinum = " << hinum << '\n';
+		else if (exp.op == 42) {
+			char tmp[2];
+			tmp[0] = mem[n2];
+			tmp[1] = mem[n2 + 1];
+			half = *(reinterpret_cast<short*>(tmp));
+			return;
 		}
-		else if (exp.op == "rdivu") {
-			lonum = n1 / n2;
-			hinum = n1 % n2;
+		else if (exp.op == 43) {
+			char tmp[4];
+			tmp[0] = mem[n2];
+			tmp[1] = mem[n2 + 1];
+			tmp[2] = mem[n2 + 2];
+			tmp[3] = mem[n2 + 3];
+			word = *(reinterpret_cast<int*>(tmp));
+			return;
 		}
-		else if (exp.op == "xor") ans = n2 ^ n3;
-		else if (exp.op == "xoru") ans = n2 ^ n3;
-		else if (exp.op == "neg") ans = -n2;
-		else if (exp.op == "negu") ans = (n2 >= 0 ? -n2 : n2);
-		else if (exp.op == "rem") ans = n2 % n3;
-		else if (exp.op == "remu") ans = n2 % n3;
-		else if (exp.op == "li") ans = n2;
-		else if (exp.op == "seq") ans = (n2 == n3);
-		else if (exp.op == "sge") ans = (n2 >= n3);
-		else if (exp.op == "sgt") ans = (n2 > n3);
-		else if (exp.op == "sle") ans = (n2 <= n3);
-		else if (exp.op == "slt") ans = (n2 < n3);
-		else if (exp.op == "sne") ans = (n2 != n3);
-		else if (exp.op == "b") {
-			jump = 1;
-			tarline = n1;
+		else if (exp.op == 44) {
+			mem[n2] = (char)n1;
+			return;
 		}
-		else if (exp.op == "beq") {
-			if (n1 == n2) {
-				jump = 1;
-				tarline = n3;
-			}
+		else if (exp.op == 45) {
+			mem[n2] = (char)n1;
+			mem[n2 + 1] = (char)(n1 >> 8);
+			return;
 		}
-		else if (exp.op == "bne") {
-			if (n1 != n2) {
-				jump = 1;
-				tarline = n3;
-			}
+		else if (exp.op == 46) {
+			mem[n2] = (char)n1;
+			mem[n2 + 1] = (char)(n1 >> 8);
+			mem[n2 + 2] = (char)(n1 >> 16);
+			mem[n2 + 3] = (char)(n1 >> 24);
+
+			return;
 		}
-		else if (exp.op == "bge") {
-			if (n1 >= n2) {
-				jump = 1;
-				tarline = n3;
-			}
-		}
-		else if (exp.op == "ble") {
-			if (n1 <= n2) {
-				jump = 1;
-				tarline = n3;
-			}
-		}
-		else if (exp.op == "bgt") {
-			if (n1 > n2) {
-				jump = 1;
-				tarline = n3;
-			}
-		}
-		else if (exp.op == "blt") {
-			if (n1 < n2) {
-				jump = 1;
-				tarline = n3;
-			}
-		}
-		else if (exp.op == "beqz") {
-			if (n1 == 0) {
-				jump = 1;
-				tarline = n2;
-			}
-		}
-		else if (exp.op == "bnez") {
-			if (n1 != 0) {
-				jump = 1;
-				tarline = n2;
-			}
-		}
-		else if (exp.op == "blez") {
-			if (n1 <= 0) {
-				jump = 1;
-				tarline = n2;
-			}
-		}
-		else if (exp.op == "bgez") {
-			if (n1 >= 0) {
-				jump = 1;
-				tarline = n2;
-			}
-		}
-		else if (exp.op == "bgtz") {
-			if (n1 > 0) {
-				jump = 1;
-				tarline = n2;
-			}
-		}
-		else if (exp.op == "bltz") {
-			if (n1 < 0) {
-				jump = 1;
-				tarline = n2;
-			}
-		}
-		else if (exp.op == "j") {
-			jump = 1;
-			tarline = n1;
-		}
-		else if (exp.op == "jr") {
-			jump = 1;
-			tarline = n1;
-		}
-		else if (exp.op == "jal") {
-			jump = 1;
-			tarline = n1;
-		}
-		else if (exp.op == "jalr") {
-			jump = 1;
-			tarline = n1;
-		}
-		else if (exp.op == "la") {
-			if (exp.expstate[1] == isreg) n2 = reg[exp.num[1]].data + exp.offset;
-			else n2 = exp.num[1] + exp.offset;
-		}
-		else if (exp.op == "lb") {
-			if (exp.expstate[1] == isreg) n2 = reg[exp.num[1]].data + exp.offset;
-			else n2 = exp.num[1] + exp.offset;
-		}
-		else if (exp.op == "lh") {
-			if (exp.expstate[1] == isreg) n2 = reg[exp.num[1]].data + exp.offset;
-			else n2 = exp.num[1] + exp.offset;
-		}
-		else if (exp.op == "lw") {
-			if (exp.expstate[1] == isreg) n2 = reg[exp.num[1]].data + exp.offset;
-			else n2 = exp.num[1] + exp.offset;
-		}
-		else if (exp.op == "sb") {
-			if (exp.expstate[1] == isreg) n2 = reg[exp.num[1]].data + exp.offset;
-			else n2 = exp.num[1] + exp.offset;
-		}
-		else if (exp.op == "sh") {
-			if (exp.expstate[1] == isreg) n2 = reg[exp.num[1]].data + exp.offset;
-			else n2 = exp.num[1] + exp.offset;
-		}
-		else if (exp.op == "sw") {
-			if (exp.expstate[1] == isreg) n2 = reg[exp.num[1]].data + exp.offset;
-			else n2 = exp.num[1] + exp.offset;
-		}
-		else if (exp.op == "move");
-		else if (exp.op == "mfhi");
-		else if (exp.op == "mflo");
-		else if (exp.op == "nop");
-		else if (exp.op == "syscall") {
-			if (reg[2].data == 1) cout << reg[4].data;
-			else if (reg[2].data == 4) {
+		else if (exp.op == 51) {
+			if (reg[2].data == 4) {
 				for (int i = n1; ; i++) {
 					if (mem[i] == 0) break;
 					else cout << mem[i];
 				}
 			}
-			else if (reg[2].data == 5) cin >> ans;
 			else if (reg[2].data == 8) {
 				string tmp;
 				int now_pos = n1;
@@ -567,136 +609,110 @@ public:
 				ans = mem_pos;
 				mem_pos += n1;
 			}
-			else if (reg[2].data == 10) {
-				state = 0;
-			}
-			else if (reg[2].data == 17) {
-				state = 0;
-			}
-		}*/
-		return;
-	}
-	void Memory_Access() {
-		if (exp.op == 40) {
-			ans = n2;
 		}
-		else if (exp.op == 41) {
-			byte = mem[n2];
-		}
-		else if (exp.op == 42) {
-			char tmp[2];
-			tmp[0] = mem[n2];
-			tmp[1] = mem[n2 + 1];
-			half = *(reinterpret_cast<short*>(tmp));
-		}
-		else if (exp.op == 43) {
-			char tmp[4];
-			tmp[0] = mem[n2];
-			tmp[1] = mem[n2 + 1];
-			tmp[2] = mem[n2 + 2];
-			tmp[3] = mem[n2 + 3];
-			word = *(reinterpret_cast<int*>(tmp));
-		}
-		else if (exp.op == 44) {
-			mem[n2] = (char) n1;
-		}
-		else if (exp.op == 45) {
-			mem[n2] = (char) n1;
-			mem[n2 + 1] = (char)(n1 >> 8);
-		}
-		else if (exp.op == 46) {
-			mem[n2] = (char)n1;
-			mem[n2 + 1] = (char)(n1 >> 8);
-			mem[n2 + 2] = (char)(n1 >> 16);
-			mem[n2 + 3] = (char)(n1 >> 24);
-		}
-		/*if (exp.op == "la") ans = n2; 
-		else if (exp.op == "lb") {
-			byte = mem[n2];
-		}
-		else if (exp.op == "lh") {
-			char tmp[2];
-			tmp[0] = mem[n2];
-			tmp[1] = mem[n2 + 1];
-			half = *(reinterpret_cast<short*>(tmp));
-		}
-		else if (exp.op == "lw") {
-			char tmp[4];
-			tmp[0] = mem[n2];
-			tmp[1] = mem[n2 + 1];
-			tmp[2] = mem[n2 + 2];
-			tmp[3] = mem[n2 + 3];
-			word = *(reinterpret_cast<int*>(tmp));
-		}
-		else if (exp.op == "sb") {
-			mem[n2] = (char)reg[n1].data;
-		}
-		else if (exp.op == "sh") {
-			mem[n2] = (char)reg[n1].data;
-			mem[n2 + 1] = (char)(reg[n1].data >> 8);
-		}
-		else if (exp.op == "sw") {
-			mem[n2] = (char)reg[n1].data;
-			mem[n2 + 1] = (char)(reg[n1].data >> 8);
-			mem[n2 + 2] = (char)(reg[n1].data >> 16);
-			mem[n2 + 3] = (char)(reg[n1].data >> 24);
-		}*/
+		else pipeline_state[4] = 0;
+
 		return;
 	}
 	void Write_Back() {
+		step = 5; 
 		if (jump) {
 			reg[34].data = tarline;
+			pipeline_state[0] = 1;
 		}
-		else reg[34].data++;
 		if (exp.op >= 1 && exp.op <= 13) {
 			reg[n1].data = ans;
+			reg[n1].occupied = 0;
 		}
 		else if (exp.op >= 14 && exp.op <= 15) {
 			reg[n1].data = ans;
+			reg[n1].occupied = 0;
 		}
 		else if (exp.op == 16) {
 			reg[n1].data = ans;
+			reg[n1].occupied = 0;
 		}
 		else if (exp.op >= 17 && exp.op <= 22) {
 			reg[n1].data = ans;
+			reg[n1].occupied = 0;
 		}
-		else if (exp.op >= 23 && exp.op <= 28) { }
-		else if (exp.op >= 29 && exp.op <= 34) { }
-		else if (exp.op >= 35 && exp.op <= 37) {
-			if (exp.op == 37) reg[31].data = nowline + 1;
+		else if (exp.op >= 23 && exp.op <= 28) {}
+		else if (exp.op >= 29 && exp.op <= 34) {}
+		else if (exp.op >= 35 && exp.op <= 36) {}
+		else if (exp.op == 37) {
+			reg[31].data = nowline + 1;
+			reg[31].occupied = 0;
 		}
-		else if (exp.op >= 38 && exp.op <= 39) {
-			if (exp.op == 39) reg[31].data = nowline + 1;
+		else if (exp.op == 38) {}
+		else if (exp.op == 39) {
+			reg[31].data = nowline + 1;
+			reg[31].occupied = 0;
 		}
-		else if (exp.op == 40) reg[n1].data = ans;
-		else if (exp.op == 41) reg[n1].data = byte;
-		else if (exp.op == 42) reg[n1].data = half;
-		else if (exp.op == 43) reg[n1].data = word;
-		else if (exp.op >= 44 && exp.op <= 46) { }
-		else if (exp.op == 47) reg[n1].data = reg[n2].data;
-		else if (exp.op == 48) reg[n1].data = reg[32].data;
-		else if (exp.op == 49) reg[n1].data = reg[33].data;
-		else if (exp.op == 50) { }
+		else if (exp.op == 40) {
+			reg[n1].data = ans;
+			reg[n1].occupied = 0;
+		}
+		else if (exp.op == 41) {
+			reg[n1].data = byte;
+			reg[n1].occupied = 0;
+		}
+		else if (exp.op == 42) {
+			reg[n1].data = half;
+			reg[n1].occupied = 0;
+		}
+		else if (exp.op == 43) {
+			reg[n1].data = word;
+			reg[n1].occupied = 0;
+		}
+		else if (exp.op >= 44 && exp.op <= 46) {}
+		else if (exp.op == 47) {
+			reg[n1].data = reg[n2].data;
+			reg[n1].occupied = 0;
+		}
+		else if (exp.op == 48) {
+			reg[n1].data = reg[32].data;
+			reg[n1].occupied = 0;
+		}
+		else if (exp.op == 49) {
+			reg[n1].data = reg[33].data;
+			reg[n1].occupied = 0;
+		}
+		else if (exp.op == 50) {}
 		else if (exp.op == 51) {
 			switch (reg[2].data) {
 			case 5:
 				reg[2].data = ans;
+				reg[2].occupied = 0;
 				break;
 			case 9:
 				reg[2].data = ans;
+				reg[2].occupied = 0;
 				break;
 			}
 		}
 		else if (exp.op >= 52 && exp.op <= 55) {
 			reg[32].data = hinum;
+			reg[32].occupied = 0;
 			reg[33].data = lonum;
+			reg[33].occupied = 0;
 		}
+		pipeline_state[5] = 1;
 		return;
 	}
+
+	void Start_Next_Process() {
+		if (step == 1) Instruction_Decode_And_Data_Preparation();
+		else if (step == 2) Execution();
+		else if (step == 3) Memory_Access();
+		else if (step == 4) Write_Back();
+		return;
+	}
+
 	void print() {
 		for (int i = 0; i < 35; i++) {
 			cout << /*"reg[" << i << "] = " <<*/ reg[i].data << ' ';
 		}
 		cout << '\n';
 	}
+
 };

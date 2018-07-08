@@ -23,7 +23,7 @@ int pipeline_state[6] = { 1, 0, 0, 0, 0, 1 }; // 0 : 未开始； 1 ： 已执行； 2 ：
 class Pipeline_Class {
 public:
 	TokenScanner exp;
-	int n1, n2, n3;
+	int n1 = 0, n2 = 0, n3 = 0;
 	long long ans = 0;
 	int lonum = 0, hinum = 0;
 	int tarline = 0, nowline = 0;
@@ -41,15 +41,7 @@ public:
 		step = 1;
 		nowline = linenum;
 		exp = token;
-		ans = 0;
-		lonum = 0, hinum = 0;
-		tarline = 0;
-		word = 0;
-		half = 0;
-		byte = 0;
-		jump = 0;
-		state = 1;
-		pos = 0;
+
 		pipeline_state[1] = 1;
 
 		if (exp.op >= 23 && exp.op <= 39) pipeline_state[0] = 0;
@@ -57,6 +49,7 @@ public:
 			pipeline_state[0] = 1;
 			reg[34].data++;
 		}
+
 		return;
 	}
 	void Instruction_Decode_And_Data_Preparation() {

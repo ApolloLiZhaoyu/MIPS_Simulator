@@ -1,5 +1,5 @@
 #include <cstring>
-#include "MIPS_Simulator.h"
+#include "MIPS_Simulator1.h"
 
 using namespace std;
 
@@ -34,13 +34,13 @@ void init() {
 	memset(mem, 0, Max_Size);
 
 	reg[29].data = Max_Size - 1;
-	// 1 : ËãÊýÓëÂß¼­Ö¸Áî£¬ÓÐÈý¸öÔËËãÊý;          2 £º ËãÊýÓëÂß¼­Ö¸Áî£¬ÓÐÁ½¸öÔËËãÊý;
-	// 3 : ³£Êý²Ù×÷Ö¸Áî;                        4 £º ±È½ÏÖ¸Áî;
-	// 5 £º·ÖÖ§ÓëÌø×ªÖ¸Áî£¬ÓÐÁ½¸öÔËËãÊý;          6 £º ·ÖÖ§ÓëÌø×ªÖ¸Áî£¬ÓÐÒ»¸öÔËËãÊý;
-	// 7 : ·ÖÖ§ÓëÌø×ªÖ¸Áî£¬Ö»ÓÐlabel;            8 £º ·ÖÖ§ÓëÌø×ªÖ¸Áî£¬Ö»ÓÐregister;
-	// 9 £º loadÖ¸Áî;                          10 £º storeÖ¸Áî;
-	// 11 £º Êý¾ÝÒÆ¶¯Ö¸Áî£¬ÓÐÁ½¸öÔËËãÊý;         12 £º Êý¾ÝÒÆ¶¯Ö¸Áî£¬ ÓÐÒ»¸öÔËËãÊý;
-	// 13 £º nop;                              14 : syscall;
+	// 1 : ç®—æ•°ä¸Žé€»è¾‘æŒ‡ä»¤ï¼Œæœ‰ä¸‰ä¸ªè¿ç®—æ•°;          2 ï¼š ç®—æ•°ä¸Žé€»è¾‘æŒ‡ä»¤ï¼Œæœ‰ä¸¤ä¸ªè¿ç®—æ•°;
+	// 3 : å¸¸æ•°æ“ä½œæŒ‡ä»¤;                        4 ï¼š æ¯”è¾ƒæŒ‡ä»¤;
+	// 5 ï¼šåˆ†æ”¯ä¸Žè·³è½¬æŒ‡ä»¤ï¼Œæœ‰ä¸¤ä¸ªè¿ç®—æ•°;          6 ï¼š åˆ†æ”¯ä¸Žè·³è½¬æŒ‡ä»¤ï¼Œæœ‰ä¸€ä¸ªè¿ç®—æ•°;
+	// 7 : åˆ†æ”¯ä¸Žè·³è½¬æŒ‡ä»¤ï¼Œåªæœ‰label;            8 ï¼š åˆ†æ”¯ä¸Žè·³è½¬æŒ‡ä»¤ï¼Œåªæœ‰register;
+	// 9 ï¼š loadæŒ‡ä»¤;                          10 ï¼š storeæŒ‡ä»¤;
+	// 11 ï¼š æ•°æ®ç§»åŠ¨æŒ‡ä»¤ï¼Œæœ‰ä¸¤ä¸ªè¿ç®—æ•°;         12 ï¼š æ•°æ®ç§»åŠ¨æŒ‡ä»¤ï¼Œ æœ‰ä¸€ä¸ªè¿ç®—æ•°;
+	// 13 ï¼š nop;                              14 : syscall;
 	// 15 :  rmul, rmulu, rdiv, rdivu
 	/*op_type["add"] = 1;
 	op_type["addu"] = 1;

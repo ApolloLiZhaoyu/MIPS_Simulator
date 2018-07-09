@@ -9,7 +9,7 @@
 #include <cmath>
 #include <thread>
 #include "Parser.h"
-#include "pipeline.h"
+#include "Pipeline.h"
 #include "TokenScanner.h"
 
 #define Max_Size 4 * 1024 * 1024

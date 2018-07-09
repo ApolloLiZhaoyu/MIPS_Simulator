@@ -9,7 +9,7 @@
 #include <cmath>
 #include <thread>
 #include "Parser.h"
-#include "Pipeline.h"
+#include "Pipeline1.h"
 #include "TokenScanner.h"
 
 #define Max_Size 4 * 1024 * 1024
@@ -337,7 +337,7 @@ public:
 		bool run = 1, stop = 0;
 
 		while (run) {
-			//cout << "Á÷Ë®ÏßÖÐÓÐ " << five_pipelines.size() << "ÌõÓï¾ä!!!" << endl;
+			//cout << "æµæ°´çº¿ä¸­æœ‰ " << five_pipelines.size() << "æ¡è¯­å¥!!!" << endl;
 
 			pipeline_state[4] = 0;
 
@@ -364,7 +364,7 @@ public:
 					if (pipeline_state[6] == 0) {
 						int cnt = five_pipelines.size() - i - 1;
 						while (cnt--) {
-							//cout << "·ÖÖ§´íÎó: Ìß³ö" << codeline[five_pipelines[i + cnt + 1].nowline] << endl;
+							//cout << "åˆ†æ”¯é”™è¯¯: è¸¢å‡º" << codeline[five_pipelines[i + cnt + 1].nowline] << endl;
 							five_pipelines.pop_back();
 						}
 						pipeline_state[0] = 1;

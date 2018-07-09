@@ -325,7 +325,7 @@ public:
 
 	void pipeline() {
 
-		deque <Pipeline_Class> five_pipeline;
+		deque <Pipeline_Class> five_pipelines;
 
 		reg[34].data = label["main"];
 
@@ -336,7 +336,7 @@ public:
 
 			pipeline_state[4] = 0;
 
-			for (auto &nowpipe : five_pipeline) {
+			for (auto &nowpipe : five_pipelines) {
 				//cout << nowpipe.nowline << endl;
 				//cout << codeline[nowpipe.nowline] << endl;
 				switch (nowpipe.step) {
@@ -344,7 +344,7 @@ public:
 					nowpipe.Write_Back();
 					//cout << "Finish Write_Back !!!" << endl;
 					//cout << "pipeline_state[5] = " << pipeline_state[5] << endl;
-					five_pipeline.pop_front();
+					five_pipelines.pop_front();
 					break;
 				case 3:
 					nowpipe.Memory_Access();
@@ -368,40 +368,14 @@ public:
 					//else cout << "Finish Instruction_Decode_And_Data_Preparation !!!" << endl;
 					break;
 				}
-				/*if (nowpipe.step == 4) {
-					nowpipe.Write_Back();
-					//cout << "Finish Write_Back !!!" << endl;
-					//cout << "pipeline_state[5] = " << pipeline_state[5] << endl;
-					five_pipeline.pop_front();
-				}
-				else if (nowpipe.step == 3) {
-					nowpipe.Memory_Access();
-					//cout << "Finish Memory_Access !!!" << endl;
-				}
-				else if (nowpipe.step == 2) {
-					nowpipe.Execution();
-					if (nowpipe.state == 0) {
-						run = 0;
-						break;
-					}
-					//cout << "Finish Execution !!!" << endl;
-				}
-				else if (nowpipe.step == 1) {
-					nowpipe.Instruction_Decode_And_Data_Preparation();
-					if (pipeline_state[2] == 2) {
-						nowpipe.step = 1;
-						stop = 1;
-						//cout << "Stop Instruction_Decode_And_Data_Preparation !!!" << endl;
-					}
-					//else cout << "Finish Instruction_Decode_And_Data_Preparation !!!" << endl;
-				}*/
 			}
+
 			if (pipeline_state[0] == 1 && stop == 0 && pipeline_state[4] == 0) {
 				Pipeline_Class nextpipe;
 				//cout << reg[34].data << endl;
 				//cout << codeline[reg[34].data] << endl;
 				nextpipe.Instruction_Fetch(reg[34].data, expline[reg[34].data]);
-				five_pipeline.push_back(nextpipe);
+				five_pipelines.push_back(nextpipe);
 				//cout << "Finish Instruction_Fetch !!!" << endl;
 			}
 

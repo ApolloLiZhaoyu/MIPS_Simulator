@@ -91,9 +91,8 @@ public:
 		else if (token == ".half") {
 			while (pos < str.length()) {
 				short n = get_short(str, pos);
-				char c[2];
-				c[0] = mem[mem_pos++] = (char)n;
-				c[1] = mem[mem_pos++] = (char)(n >> 8);
+				mem[mem_pos++] = (char)n;
+				mem[mem_pos++] = (char)(n >> 8);
 			}
 			return;
 		}

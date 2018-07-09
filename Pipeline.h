@@ -31,9 +31,8 @@ public:
 	short half = 0;
 	char byte;
 	bool jump = 0;
-	int state = 1; //0 : break; 1 : run;
+	bool state = 1; //0 : break; 1 : run;
 	int step = 0;
-	size_t pos = 0;
 
 	Pipeline_Class() { }
 
@@ -52,6 +51,7 @@ public:
 
 		return;
 	}
+
 	void Instruction_Decode_And_Data_Preparation() {
 		step = 2;
 		if (exp.op >= 1 && exp.op <= 13) {
@@ -264,6 +264,7 @@ public:
 
 		return;
 	}
+
 	void Execution() {
 		step = 3;
 		switch (exp.op) {
@@ -540,6 +541,7 @@ public:
 
 		return;
 	}
+
 	void Memory_Access() {
 		step = 4;
 		pipeline_state[4] = 1;
@@ -603,74 +605,11 @@ public:
 			}
 		}
 
-		/*if (exp.op == 40) {
-			ans = n2;
-			return;
-		}
-		else if (exp.op == 41) {
-			byte = mem[n2];
-			return;
-		}
-		else if (exp.op == 42) {
-			char tmp[2];
-			tmp[0] = mem[n2];
-			tmp[1] = mem[n2 + 1];
-			half = *(reinterpret_cast<short*>(tmp));
-			return;
-		}
-		else if (exp.op == 43) {
-			char tmp[4];
-			tmp[0] = mem[n2];
-			tmp[1] = mem[n2 + 1];
-			tmp[2] = mem[n2 + 2];
-			tmp[3] = mem[n2 + 3];
-			word = *(reinterpret_cast<int*>(tmp));
-			return;
-		}
-		else if (exp.op == 44) {
-			mem[n2] = (char)n1;
-			return;
-		}
-		else if (exp.op == 45) {
-			mem[n2] = (char)n1;
-			mem[n2 + 1] = (char)(n1 >> 8);
-			return;
-		}
-		else if (exp.op == 46) {
-			mem[n2] = (char)n1;
-			mem[n2 + 1] = (char)(n1 >> 8);
-			mem[n2 + 2] = (char)(n1 >> 16);
-			mem[n2 + 3] = (char)(n1 >> 24);
-
-			return;
-		}
-		else if (exp.op == 51) {
-			if (reg[2].data == 4) {
-				for (int i = n1; ; i++) {
-					if (mem[i] == 0) break;
-					else cout << mem[i];
-				}
-			}
-			else if (reg[2].data == 8) {
-				string tmp;
-				int now_pos = n1;
-				cin >> tmp;
-				for (int i = 0; i < tmp.length(); i++) {
-					mem[now_pos++] = tmp[i];
-				}
-				mem[now_pos++] = '\0';
-			}
-			else if (reg[2].data == 9) {
-				ans = mem_pos;
-				mem_pos += n1;
-			}
-		}
-		else pipeline_state[4] = 0;*/
-
 		pipeline_state[4] = 0;
 
 		return;
 	}
+
 	void Write_Back() {
 		step = 5; 
 		if (jump) {

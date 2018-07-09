@@ -1,5 +1,5 @@
 #include <cstring>
-#include "MIPS_Simulator.h"
+#include "MIPS_Simulator1.h"
 
 using namespace std;
 

@@ -339,8 +339,36 @@ public:
 			for (auto &nowpipe : five_pipeline) {
 				//cout << nowpipe.nowline << endl;
 				//cout << codeline[nowpipe.nowline] << endl;
-
-				if (nowpipe.step == 4) {
+				switch (nowpipe.step) {
+				case 4:
+					nowpipe.Write_Back();
+					//cout << "Finish Write_Back !!!" << endl;
+					//cout << "pipeline_state[5] = " << pipeline_state[5] << endl;
+					five_pipeline.pop_front();
+					break;
+				case 3:
+					nowpipe.Memory_Access();
+					//cout << "Finish Memory_Access !!!" << endl;
+					break;
+				case 2:
+					nowpipe.Execution();
+					if (nowpipe.state == 0) {
+						run = 0;
+						break;
+					}
+					//cout << "Finish Execution !!!" << endl;
+					break;
+				case 1:
+					nowpipe.Instruction_Decode_And_Data_Preparation();
+					if (pipeline_state[2] == 2) {
+						nowpipe.step = 1;
+						stop = 1;
+						//cout << "Stop Instruction_Decode_And_Data_Preparation !!!" << endl;
+					}
+					//else cout << "Finish Instruction_Decode_And_Data_Preparation !!!" << endl;
+					break;
+				}
+				/*if (nowpipe.step == 4) {
 					nowpipe.Write_Back();
 					//cout << "Finish Write_Back !!!" << endl;
 					//cout << "pipeline_state[5] = " << pipeline_state[5] << endl;
@@ -366,7 +394,7 @@ public:
 						//cout << "Stop Instruction_Decode_And_Data_Preparation !!!" << endl;
 					}
 					//else cout << "Finish Instruction_Decode_And_Data_Preparation !!!" << endl;
-				}
+				}*/
 			}
 			if (pipeline_state[0] == 1 && stop == 0 && pipeline_state[4] == 0) {
 				Pipeline_Class nextpipe;

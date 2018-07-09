@@ -7,6 +7,7 @@
 #include <deque>
 #include <vector>
 #include <cmath>
+#include <thread>
 #include "Parser.h"
 #include "Pipeline.h"
 #include "TokenScanner.h"
@@ -34,8 +35,8 @@ public:
 
 	void execute(fstream &code) {
 		read(code);
-
 		pipeline();
+		return;
 	}
 
 	void interprete_data(string &str) {
@@ -43,6 +44,7 @@ public:
 		size_t len = str.length();
 
 		string token = get_phrase(str, pos);
+
 		if (token == "") return;
 		else if (token[0] == '#') return;
 		else if (str[pos - 1] == ':') {
@@ -91,38 +93,23 @@ public:
 				char c[2];
 				c[0] = mem[mem_pos++] = (char)n;
 				c[1] = mem[mem_pos++] = (char)(n >> 8);
-				/*char* c = reinterpret_cast<char*> (&n);
-				mem[mem_pos++] = c[0];
-				mem[mem_pos++] = c[1];*/
 			}
 			return;
 		}
 		else if (token == ".word") {
 			while (pos < str.length()) {
 				int n = get_num(str, pos);
-
 				mem[mem_pos++] = (char)n;
 				mem[mem_pos++] = (char)(n >> 8);
 				mem[mem_pos++] = (char)(n >> 16);
 				mem[mem_pos++] = (char)(n >> 24);
-
-				/*char* c = reinterpret_cast<char*> (&n);
-				mem[mem_pos++] = c[0];
-				mem[mem_pos++] = c[1];
-				mem[mem_pos++] = c[2];
-				mem[mem_pos++] = c[3];*/
 			}
-			//cout << '\n';
 			return;
 		}
 		else if (token == ".space") {
-
 			int n = get_num(str, pos);
 			mem_pos += n;
 			return;
-		}
-		else {
-			cerr << "Wrong Expression!!!" << '\n';
 		}
 		return;
 	}
@@ -136,7 +123,6 @@ public:
 		if (token == "") return false;
 		else if (token[0] == '#') return false;
 		else if (str[pos - 1] == ':') {
-
 			label[token] = codeline.size();
 			return false;
 		}
@@ -151,32 +137,24 @@ public:
 	}
 
 	void interprete_codeline() {
-
 		//for (auto x : codeline) cout << x << '\n';
 
-		//int line = 1;
-
-		for (auto x : codeline) {
+		for (auto &str : codeline) {
 
 			TokenScanner nowline;
 
 			size_t pos = 0;
 
-			string op = get_phrase(x, pos);
-
-			string r1 = get_phrase(x, pos);
-			string r2 = get_phrase(x, pos);
-			string r3 = get_phrase(x, pos);
+			string op = get_phrase(str, pos);
+			string r1 = get_phrase(str, pos);
+			string r2 = get_phrase(str, pos);
+			string r3 = get_phrase(str, pos);
 
 			if ((op == "mul" || op == "mulu" || op == "div" || op == "divu") && r3 == "") {
 				op = 'r' + op;
 			}
 
 			nowline.op = op_num[op];
-
-			//cout << "line " << line << endl;
-			//cout << "op " << op << endl;
-			//line++;
 
 			if (nowline.op >= 1 && nowline.op <= 13) {
 				nowline.num[0] = regname[r1];
@@ -322,18 +300,14 @@ public:
 			}
 
 			expline.push_back(nowline);
-
 		}
-
 		return;
 	}
 
 	void read(fstream &code) {
-
 		string tokenline;
 
 		while (getline(code, tokenline)) {
-
 			if (state == 0) {
 				interprete_data(tokenline);
 			}
@@ -345,6 +319,7 @@ public:
 		}
 
 		interprete_codeline();
+
 		return;
 	}
 
@@ -354,9 +329,7 @@ public:
 
 		reg[34].data = label["main"];
 
-		bool run = true;
-
-		int wait = 0;
+		bool run = 1, stop = 0;
 
 		while(run) {
 			//cout << "流水线中有 " << five_pipeline.size() << "条语句!!!" << endl;
@@ -364,10 +337,9 @@ public:
 			pipeline_state[4] = 0;
 
 			for (auto &nowpipe : five_pipeline) {
-
 				//cout << nowpipe.nowline << endl;
-
 				//cout << codeline[nowpipe.nowline] << endl;
+
 				if (nowpipe.step == 4) {
 					nowpipe.Write_Back();
 					//cout << "Finish Write_Back !!!" << endl;
@@ -390,18 +362,13 @@ public:
 					nowpipe.Instruction_Decode_And_Data_Preparation();
 					if (pipeline_state[2] == 2) {
 						nowpipe.step = 1;
-						wait++;
+						stop = 1;
 						//cout << "Stop Instruction_Decode_And_Data_Preparation !!!" << endl;
 					}
 					//else cout << "Finish Instruction_Decode_And_Data_Preparation !!!" << endl;
 				}
 			}
-
-			//cout << "pipeline_state[0] = " << pipeline_state[0] << " wait = " << wait << " pipeline_state[4] = " << pipeline_state[4] << endl;
-		//	Pipeline_Class c;
-		//	c.print();
-
-			if (pipeline_state[0] == 1 && wait == 0 && pipeline_state[4] == 0) {
+			if (pipeline_state[0] == 1 && stop == 0 && pipeline_state[4] == 0) {
 				Pipeline_Class nextpipe;
 				//cout << reg[34].data << endl;
 				//cout << codeline[reg[34].data] << endl;
@@ -410,7 +377,7 @@ public:
 				//cout << "Finish Instruction_Fetch !!!" << endl;
 			}
 
-			if(wait > 0) wait--;
+			if(stop) stop = 0;
 		}
 		return;
 	}

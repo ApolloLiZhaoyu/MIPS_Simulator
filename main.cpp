@@ -7,24 +7,7 @@ MIPS_Simulator_Class mips_simulaotor;
 map <string, int> regname;
 map <string, int> label;
 map <string, int> op_num;
-
-enum op_type {
-	Add = 1, Addu, Addiu, Sub, Subu, Mul, Mulu, Div, Divu, Xor, Xoru, REM, REMU,
-	Neg, Negu,
-	Li,
-	Seq, Sge, Sgt, Sle, Slt, Sne,
-	Beq, Bne, Bge, Ble, Bgt, Blt, 
-	Beqz, Bnez, Blez, Bgez, Bgtz, Bltz,
-	B, J, Jal,
-	Jr, Jalr,
-	La, Lb, Lh, Lw,
-	Sb, Sh, Sw,
-	Move, 
-	Mfhi, Mflo,
-	Nop,
-	Syscall,
-	Rmul, Rmulu, Rdiv, Rdivu
-};
+map <int, int> predictor_num;
 
 char *mem;
 int mem_pos = 0;

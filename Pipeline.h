@@ -261,6 +261,7 @@ public:
 		}
 
 		pipeline_state[2] = 1;
+
 		return;
 	}
 	void Execution() {
@@ -534,14 +535,75 @@ public:
 			hinum = n1 % n2;
 			break;
 		}
+
 		pipeline_state[3] = 1;
+
 		return;
 	}
 	void Memory_Access() {
 		step = 4;
 		pipeline_state[4] = 1;
 
-		if (exp.op == 40) {
+		switch (exp.op)	{
+		case 40:
+			ans = n2;
+			return;
+		case 41:
+			byte = mem[n2];
+			return;
+		case 42:
+			char tmp2[2];
+			tmp2[0] = mem[n2];
+			tmp2[1] = mem[n2 + 1];
+			half = *(reinterpret_cast<short*>(tmp2));
+			return;
+		case 43:
+			char tmp4[4];
+			tmp4[0] = mem[n2];
+			tmp4[1] = mem[n2 + 1];
+			tmp4[2] = mem[n2 + 2];
+			tmp4[3] = mem[n2 + 3];
+			word = *(reinterpret_cast<int*>(tmp4));
+			return;
+		case 44:
+			mem[n2] = (char)n1;
+			return;
+		case 45:
+			mem[n2] = (char)n1;
+			mem[n2 + 1] = (char)(n1 >> 8);
+			return;
+		case 46:
+			mem[n2] = (char)n1;
+			mem[n2 + 1] = (char)(n1 >> 8);
+			mem[n2 + 2] = (char)(n1 >> 16);
+			mem[n2 + 3] = (char)(n1 >> 24);
+			return;
+		case 51:
+			if (reg[2].data == 4) {
+				for (int i = n1; ; i++) {
+					if (mem[i] == 0) break;
+					else cout << mem[i];
+				}
+				return;
+			}
+			else if (reg[2].data == 8) {
+				string tmp;
+				int now_pos = n1;
+				cin >> tmp;
+				for (int i = 0; i < tmp.length(); i++) {
+					mem[now_pos++] = tmp[i];
+				}
+				mem[now_pos++] = '\0';
+				return;
+			}
+			else if (reg[2].data == 9) {
+				ans = mem_pos;
+				mem_pos += n1;
+				return;
+			}
+		}
+
+		/*if (exp.op == 40) {
 			ans = n2;
 			return;
 		}
@@ -603,7 +665,9 @@ public:
 				mem_pos += n1;
 			}
 		}
-		else pipeline_state[4] = 0;
+		else pipeline_state[4] = 0;*/
+
+		pipeline_state[4] = 0;
 
 		return;
 	}
@@ -689,15 +753,9 @@ public:
 			reg[33].data = lonum;
 			reg[33].occupied = 0;
 		}
-		pipeline_state[5] = 1;
-		return;
-	}
 
-	void Start_Next_Process() {
-		if (step == 1) Instruction_Decode_And_Data_Preparation();
-		else if (step == 2) Execution();
-		else if (step == 3) Memory_Access();
-		else if (step == 4) Write_Back();
+		pipeline_state[5] = 1;
+
 		return;
 	}
 

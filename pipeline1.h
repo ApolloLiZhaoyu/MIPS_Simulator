@@ -516,25 +516,21 @@ public:
 			if (n1 != 0) {
 				if (predictor[predictor_num[nowline]].take()) {
 					++predictor[predictor_num[nowline]];
-					right_num++;
 				}
 				else {
 					++predictor[predictor_num[nowline]];
 					pipeline_state[6] = 0;
 					reg[34].data = exp.num[1];
-					wrong_num++;
 				}
 			}
 			else {
 				if (!predictor[predictor_num[nowline]].take()) {
 					--predictor[predictor_num[nowline]];
-					right_num++;
 				}
 				else {
 					pipeline_state[6] = 0;
 					--predictor[predictor_num[nowline]];
 					reg[34].data = nowline + 1;
-					wrong_num++;
 				}
 			}
 			break;
@@ -542,25 +538,21 @@ public:
 			if (n1 <= 0) {
 				if (predictor[predictor_num[nowline]].take()) {
 					++predictor[predictor_num[nowline]];
-					right_num++;
 				}
 				else {
 					++predictor[predictor_num[nowline]];
 					pipeline_state[6] = 0;
 					reg[34].data = exp.num[1];
-					wrong_num++;
 				}
 			}
 			else {
 				if (!predictor[predictor_num[nowline]].take()) {
 					--predictor[predictor_num[nowline]];
-					right_num++;
 				}
 				else {
 					pipeline_state[6] = 0;
 					--predictor[predictor_num[nowline]];
 					reg[34].data = nowline + 1;
-					wrong_num++;
 				}
 			}
 			break;
@@ -568,25 +560,21 @@ public:
 			if (n1 >= 0) {
 				if (predictor[predictor_num[nowline]].take()) {
 					++predictor[predictor_num[nowline]];
-					right_num++;
 				}
 				else {
 					++predictor[predictor_num[nowline]];
 					pipeline_state[6] = 0;
 					reg[34].data = exp.num[1];
-					wrong_num++;
 				}
 			}
 			else {
 				if (!predictor[predictor_num[nowline]].take()) {
 					--predictor[predictor_num[nowline]];
-					right_num++;
 				}
 				else {
 					pipeline_state[6] = 0;
 					--predictor[predictor_num[nowline]];
 					reg[34].data = nowline + 1;
-					wrong_num++;
 				}
 			}
 			break;
@@ -594,25 +582,21 @@ public:
 			if (n1 > 0) {
 				if (predictor[predictor_num[nowline]].take()) {
 					++predictor[predictor_num[nowline]];
-					right_num++;
 				}
 				else {
 					++predictor[predictor_num[nowline]];
 					pipeline_state[6] = 0;
 					reg[34].data = exp.num[1];
-					wrong_num++;
 				}
 			}
 			else {
 				if (!predictor[predictor_num[nowline]].take()) {
 					--predictor[predictor_num[nowline]];
-					right_num++;
 				}
 				else {
 					pipeline_state[6] = 0;
 					--predictor[predictor_num[nowline]];
 					reg[34].data = nowline + 1;
-					wrong_num++;
 				}
 			}
 			break;
@@ -620,25 +604,21 @@ public:
 			if (n1 < 0) {
 				if (predictor[predictor_num[nowline]].take()) {
 					++predictor[predictor_num[nowline]];
-					right_num++;
 				}
 				else {
 					++predictor[predictor_num[nowline]];
 					pipeline_state[6] = 0;
 					reg[34].data = exp.num[1];
-					wrong_num++;
 				}
 			}
 			else {
 				if (!predictor[predictor_num[nowline]].take()) {
 					--predictor[predictor_num[nowline]];
-					right_num++;
 				}
 				else {
 					pipeline_state[6] = 0;
 					--predictor[predictor_num[nowline]];
 					reg[34].data = nowline + 1;
-					wrong_num++;
 				}
 			}
 			break;

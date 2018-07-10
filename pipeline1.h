@@ -16,12 +16,10 @@ extern map <string, int> label;
 extern char *mem;
 extern int mem_pos;
 extern map <int, int> predictor_num;
-extern int right_num;
-extern int wrong_num;
 
-int pipeline_state[7] = { 1, 0, 0, 0, 0, 1, 1}; // 0 : Î´¿ªÊ¼£» 1 £º ÒÑÖ´ĞĞ£» 2 £º Í£Ö¹
-// pipeline_state[0] : 0 : ÓĞ·ÖÖ§£» 1 : Ã»·ÖÖ§£¬ ¿ÉÒÔIFÏÂÒ»¾ä;
-// pipeline_state[6] : 0 : Ô¤²â´íÎó£» 1 £ºÔ¤²âÕıÈ·  
+int pipeline_state[7] = { 1, 0, 0, 0, 0, 1, 1}; // 0 : æœªå¼€å§‹ï¼› 1 ï¼š å·²æ‰§è¡Œï¼› 2 ï¼š åœæ­¢
+// pipeline_state[0] : 0 : æœ‰åˆ†æ”¯ï¼› 1 : æ²¡åˆ†æ”¯ï¼Œ å¯ä»¥IFä¸‹ä¸€å¥;
+// pipeline_state[6] : 0 : é¢„æµ‹é”™è¯¯ï¼› 1 ï¼šé¢„æµ‹æ­£ç¡®  
 
 class Pipeline_Class {
 public:

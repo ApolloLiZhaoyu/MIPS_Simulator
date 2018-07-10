@@ -16,6 +16,8 @@ extern map <string, int> label;
 extern char *mem;
 extern int mem_pos;
 extern map <int, int> predictor_num;
+extern int right_num;
+extern int wrong_num;
 
 int pipeline_state[7] = { 1, 0, 0, 0, 0, 1, 1}; // 0 : 未开始； 1 ： 已执行； 2 ： 停止
 // pipeline_state[0] : 0 : 有分支； 1 : 没分支， 可以IF下一句;
@@ -64,7 +66,13 @@ public:
 				reg[34].data++;
 			}
 		}
-		else if (exp.op >= 35 && exp.op <= 39) pipeline_state[0] = 0;
+		else if (exp.op >= 35 && exp.op <= 37) {
+			pipeline_state[0] = 1;
+			reg[34].data = exp.num[0];
+		}
+		else if (exp.op >= 38 && exp.op <= 39) {
+			pipeline_state[0] = 0;
+		}
 		else {
 			pipeline_state[0] = 1;
 			reg[34].data++;
@@ -141,12 +149,9 @@ public:
 			n1 = reg[exp.num[0]].data;
 			n2 = exp.num[1];
 		}
-		else if (exp.op >= 35 && exp.op <= 36) {
-			n1 = exp.num[0];
-		}
-		else if (exp.op == 37) {
+		else if (exp.op >= 35 && exp.op <= 36) {}
+		else if (exp.op == 37) { 
 			reg[31].occupied = 1;
-			n1 = exp.num[0];
 		}
 		else if (exp.op == 38) {
 			if (reg[exp.num[0]].occupied == 1) {
@@ -359,21 +364,25 @@ public:
 			if (n1 == n2) {
 				if (predictor[predictor_num[nowline]].take()) {
 					++predictor[predictor_num[nowline]];
+					right_num++;
 				}
 				else {
 					++predictor[predictor_num[nowline]];
 					pipeline_state[6] = 0;
 					reg[34].data = exp.num[2];
+					wrong_num++;
 				}
 			}
 			else {
 				if (!predictor[predictor_num[nowline]].take()) {
 					--predictor[predictor_num[nowline]];
+					right_num++;
 				}
 				else {
 					pipeline_state[6] = 0;
 					--predictor[predictor_num[nowline]];
 					reg[34].data = nowline + 1;
+					wrong_num++;
 				}
 			}
 			break;
@@ -381,21 +390,25 @@ public:
 			if (n1 != n2) {
 				if (predictor[predictor_num[nowline]].take()) {
 					++predictor[predictor_num[nowline]];
+					right_num++;
 				}
 				else {
 					++predictor[predictor_num[nowline]];
 					pipeline_state[6] = 0;
 					reg[34].data = exp.num[2];
+					wrong_num++;
 				}
 			}
 			else {
 				if (!predictor[predictor_num[nowline]].take()) {
 					--predictor[predictor_num[nowline]];
+					right_num++;
 				}
 				else {
 					pipeline_state[6] = 0;
 					--predictor[predictor_num[nowline]];
 					reg[34].data = nowline + 1;
+					wrong_num++;
 				}
 			}
 			break;
@@ -403,21 +416,25 @@ public:
 			if (n1 >= n2) {
 				if (predictor[predictor_num[nowline]].take()) {
 					++predictor[predictor_num[nowline]];
+					right_num++;
 				}
 				else {
 					++predictor[predictor_num[nowline]];
 					pipeline_state[6] = 0;
 					reg[34].data = exp.num[2];
+					wrong_num++;
 				}
 			}
 			else {
 				if (!predictor[predictor_num[nowline]].take()) {
 					--predictor[predictor_num[nowline]];
+					right_num++;
 				}
 				else {
 					pipeline_state[6] = 0;
 					--predictor[predictor_num[nowline]];
 					reg[34].data = nowline + 1;
+					wrong_num++;
 				}
 			}
 			break;
@@ -425,21 +442,25 @@ public:
 			if (n1 <= n2) {
 				if (predictor[predictor_num[nowline]].take()) {
 					++predictor[predictor_num[nowline]];
+					right_num++;
 				}
 				else {
 					++predictor[predictor_num[nowline]];
 					pipeline_state[6] = 0;
 					reg[34].data = exp.num[2];
+					wrong_num++;
 				}
 			}
 			else {
 				if (!predictor[predictor_num[nowline]].take()) {
 					--predictor[predictor_num[nowline]];
+					right_num++;
 				}
 				else {
 					pipeline_state[6] = 0;
 					--predictor[predictor_num[nowline]];
 					reg[34].data = nowline + 1;
+					wrong_num++;
 				}
 			}
 			break;
@@ -447,21 +468,25 @@ public:
 			if (n1 > n2) {
 				if (predictor[predictor_num[nowline]].take()) {
 					++predictor[predictor_num[nowline]];
+					right_num++;
 				}
 				else {
 					++predictor[predictor_num[nowline]];
 					pipeline_state[6] = 0;
 					reg[34].data = exp.num[2];
+					wrong_num++;
 				}
 			}
 			else {
 				if (!predictor[predictor_num[nowline]].take()) {
 					--predictor[predictor_num[nowline]];
+					right_num++;
 				}
 				else {
 					pipeline_state[6] = 0;
 					--predictor[predictor_num[nowline]];
 					reg[34].data = nowline + 1;
+					wrong_num++;
 				}
 			}
 			break;
@@ -469,21 +494,25 @@ public:
 			if (n1 < n2) {
 				if (predictor[predictor_num[nowline]].take()) {
 					++predictor[predictor_num[nowline]];
+					right_num++;
 				}
 				else {
 					++predictor[predictor_num[nowline]];
 					pipeline_state[6] = 0;
 					reg[34].data = exp.num[2];
+					wrong_num++;
 				}
 			}
 			else {
 				if (!predictor[predictor_num[nowline]].take()) {
 					--predictor[predictor_num[nowline]];
+					right_num++;
 				}
 				else {
 					pipeline_state[6] = 0;
 					--predictor[predictor_num[nowline]];
 					reg[34].data = nowline + 1;
+					wrong_num++;
 				}
 			}
 			break;
@@ -491,21 +520,25 @@ public:
 			if (n1 == 0) {
 				if (predictor[predictor_num[nowline]].take()) {
 					++predictor[predictor_num[nowline]];
+					right_num++;
 				}
 				else {
 					++predictor[predictor_num[nowline]];
 					pipeline_state[6] = 0;
 					reg[34].data = exp.num[1];
+					wrong_num++;
 				}
 			}
 			else {
 				if (!predictor[predictor_num[nowline]].take()) {
 					--predictor[predictor_num[nowline]];
+					right_num++;
 				}
 				else {
 					pipeline_state[6] = 0;
 					--predictor[predictor_num[nowline]];
 					reg[34].data = nowline + 1;
+					wrong_num++;
 				}
 			}
 			break;
@@ -513,21 +546,25 @@ public:
 			if (n1 != 0) {
 				if (predictor[predictor_num[nowline]].take()) {
 					++predictor[predictor_num[nowline]];
+					right_num++;
 				}
 				else {
 					++predictor[predictor_num[nowline]];
 					pipeline_state[6] = 0;
 					reg[34].data = exp.num[1];
+					wrong_num++;
 				}
 			}
 			else {
 				if (!predictor[predictor_num[nowline]].take()) {
 					--predictor[predictor_num[nowline]];
+					right_num++;
 				}
 				else {
 					pipeline_state[6] = 0;
 					--predictor[predictor_num[nowline]];
 					reg[34].data = nowline + 1;
+					wrong_num++;
 				}
 			}
 			break;
@@ -535,21 +572,25 @@ public:
 			if (n1 <= 0) {
 				if (predictor[predictor_num[nowline]].take()) {
 					++predictor[predictor_num[nowline]];
+					right_num++;
 				}
 				else {
 					++predictor[predictor_num[nowline]];
 					pipeline_state[6] = 0;
 					reg[34].data = exp.num[1];
+					wrong_num++;
 				}
 			}
 			else {
 				if (!predictor[predictor_num[nowline]].take()) {
 					--predictor[predictor_num[nowline]];
+					right_num++;
 				}
 				else {
 					pipeline_state[6] = 0;
 					--predictor[predictor_num[nowline]];
 					reg[34].data = nowline + 1;
+					wrong_num++;
 				}
 			}
 			break;
@@ -557,21 +598,25 @@ public:
 			if (n1 >= 0) {
 				if (predictor[predictor_num[nowline]].take()) {
 					++predictor[predictor_num[nowline]];
+					right_num++;
 				}
 				else {
 					++predictor[predictor_num[nowline]];
 					pipeline_state[6] = 0;
 					reg[34].data = exp.num[1];
+					wrong_num++;
 				}
 			}
 			else {
 				if (!predictor[predictor_num[nowline]].take()) {
 					--predictor[predictor_num[nowline]];
+					right_num++;
 				}
 				else {
 					pipeline_state[6] = 0;
 					--predictor[predictor_num[nowline]];
 					reg[34].data = nowline + 1;
+					wrong_num++;
 				}
 			}
 			break;
@@ -579,21 +624,25 @@ public:
 			if (n1 > 0) {
 				if (predictor[predictor_num[nowline]].take()) {
 					++predictor[predictor_num[nowline]];
+					right_num++;
 				}
 				else {
 					++predictor[predictor_num[nowline]];
 					pipeline_state[6] = 0;
 					reg[34].data = exp.num[1];
+					wrong_num++;
 				}
 			}
 			else {
 				if (!predictor[predictor_num[nowline]].take()) {
 					--predictor[predictor_num[nowline]];
+					right_num++;
 				}
 				else {
 					pipeline_state[6] = 0;
 					--predictor[predictor_num[nowline]];
 					reg[34].data = nowline + 1;
+					wrong_num++;
 				}
 			}
 			break;
@@ -601,35 +650,33 @@ public:
 			if (n1 < 0) {
 				if (predictor[predictor_num[nowline]].take()) {
 					++predictor[predictor_num[nowline]];
+					right_num++;
 				}
 				else {
 					++predictor[predictor_num[nowline]];
 					pipeline_state[6] = 0;
 					reg[34].data = exp.num[1];
+					wrong_num++;
 				}
 			}
 			else {
 				if (!predictor[predictor_num[nowline]].take()) {
 					--predictor[predictor_num[nowline]];
+					right_num++;
 				}
 				else {
 					pipeline_state[6] = 0;
 					--predictor[predictor_num[nowline]];
 					reg[34].data = nowline + 1;
+					wrong_num++;
 				}
 			}
 			break;
 		case 35:
-			jump = 1;
-			tarline = n1;
 			break;
 		case 36:
-			jump = 1;
-			tarline = n1;
 			break;
 		case 37:
-			jump = 1;
-			tarline = n1;
 			break;
 		case 38:
 			jump = 1;

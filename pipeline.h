@@ -6,6 +6,7 @@
 #include "Parser.h"
 #include "Register.h"
 #include "TokenScanner.h"
+#include "Saturating_Counter.h"
 
 using namespace std;
 
@@ -13,12 +14,12 @@ extern map <string, int> op_type;
 extern map <string, int> regname;
 extern map <string, int> label;
 extern char *mem;
-extern struct Register reg[];
 extern int mem_pos;
-extern vector <TokenScanner> expline;
+extern map <int, int> predictor_num;
 
-int pipeline_state[6] = { 1, 0, 0, 0, 0, 1 }; // 0 : Î´¿ªÊ¼£» 1 £º ÒÑÖ´ÐÐ£» 2 £º Í£Ö¹
-// pipeline_state[0] : 0 : ÓÐ·ÖÖ§£¬ 1 : Ã»·ÖÖ§£¬ ¿ÉÒÔIFÏÂÒ»¾ä;
+int pipeline_state[7] = { 1, 0, 0, 0, 0, 1, 1}; // 0 : æœªå¼€å§‹ï¼› 1 ï¼š å·²æ‰§è¡Œï¼› 2 ï¼š åœæ­¢
+// pipeline_state[0] : 0 : æœ‰åˆ†æ”¯ï¼› 1 : æ²¡åˆ†æ”¯ï¼Œ å¯ä»¥IFä¸‹ä¸€å¥;
+// pipeline_state[6] : 0 : é¢„æµ‹é”™è¯¯ï¼› 1 ï¼šé¢„æµ‹æ­£ç¡®  
 
 class Pipeline_Class {
 public:
@@ -31,9 +32,8 @@ public:
 	short half = 0;
 	char byte;
 	bool jump = 0;
-	int state = 1; //0 : break; 1 : run;
+	bool state = 1; //0 : break; 1 : run;
 	int step = 0;
-	size_t pos = 0;
 
 	Pipeline_Class() { }
 
@@ -44,7 +44,33 @@ public:
 
 		pipeline_state[1] = 1;
 
-		if (exp.op >= 23 && exp.op <= 39) pipeline_state[0] = 0;
+		if (exp.op >= 23 && exp.op <= 28) {
+			if (predictor[predictor_num[nowline]].take()) {
+				pipeline_state[0] = 1;
+				reg[34].data = exp.num[2];
+			}
+			else {
+				pipeline_state[0] = 1;
+				reg[34].data++;
+			}
+		}
+		else if (exp.op >= 29 && exp.op <= 34) {
+			if (predictor[predictor_num[nowline]].take()) {
+				pipeline_state[0] = 1;
+				reg[34].data = exp.num[1];
+			}
+			else {
+				pipeline_state[0] = 1;
+				reg[34].data++;
+			}
+		}
+		else if (exp.op >= 35 && exp.op <= 37) {
+			pipeline_state[0] = 1;
+			reg[34].data = exp.num[0];
+		}
+		else if (exp.op >= 38 && exp.op <= 39) {
+			pipeline_state[0] = 0;
+		}
 		else {
 			pipeline_state[0] = 1;
 			reg[34].data++;
@@ -52,218 +78,10 @@ public:
 
 		return;
 	}
+
 	void Instruction_Decode_And_Data_Preparation() {
 		step = 2;
-		switch (exp.op) {
-		case 1: case 2: case 3: case 4: case 5: case 6: case 7: case 8: 
-		case 9: case 10: case 11: case 12: case 13:
-			if (reg[exp.num[1]].occupied == 1) {
-				pipeline_state[2] = 2;
-				return;
-			}
-			if (exp.expstate[2] == isreg && reg[exp.num[2]].occupied == 1) {
-				pipeline_state[2] = 2;
-				return;
-			}
-			n1 = exp.num[0];
-			reg[n1].occupied = 1;
-			n2 = reg[exp.num[1]].data;
-			if (exp.expstate[2] == isreg) n3 = reg[exp.num[2]].data;
-			else n3 = exp.num[2];
-			break;
-		case 14: case 15:
-			if (reg[exp.num[1]].occupied == 1) {
-				pipeline_state[2] = 2;
-				return;
-			}
-			n1 = exp.num[0];
-			reg[n1].occupied = 1;
-			n2 = reg[exp.num[1]].data;
-			break;
-		case 16:
-			n1 = exp.num[0];
-			reg[n1].occupied = 1;
-			n2 = exp.num[1];
-			break;
-		case 17: case 18: case 19: case 20: case 21: case 22:
-			if (reg[exp.num[1]].occupied == 1) {
-				pipeline_state[2] = 2;
-				return;
-			}
-			if (exp.expstate[2] == isreg && reg[exp.num[2]].occupied == 1) {
-				pipeline_state[2] = 2;
-				return;
-			}
-			n1 = exp.num[0];
-			reg[n1].occupied = 1;
-			n2 = reg[exp.num[1]].data;
-			if (exp.expstate[2] == isreg) n3 = reg[exp.num[2]].data;
-			else n3 = exp.num[2];
-			break;
-		case 23: case 24: case 25: case 26: case 27: case 28:
-			if (reg[exp.num[0]].occupied == 1) {
-				pipeline_state[2] = 2;
-				return;
-			}
-			if (exp.expstate[1] == isreg && reg[exp.num[1]].occupied == 1) {
-				pipeline_state[2] = 2;
-				return;
-			}
-			n1 = reg[exp.num[0]].data;
-			if (exp.expstate[1] == isreg) n2 = reg[exp.num[1]].data;
-			else n2 = exp.num[1];
-			n3 = exp.num[2];
-			break;
-		case 29: case 30: case 31: case 32: case 33: case 34:
-			if (reg[exp.num[0]].occupied == 1) {
-				pipeline_state[2] = 2;
-				return;
-			}
-			n1 = reg[exp.num[0]].data;
-			n2 = exp.num[1];
-			break;
-		case 35: case 36:
-			n1 = exp.num[0];
-			break;
-		case 37:
-			reg[31].occupied = 1;
-			n1 = exp.num[0];
-			break;
-		case 38:
-			if (reg[exp.num[0]].occupied == 1) {
-				pipeline_state[2] = 2;
-				return;
-			}
-			n1 = reg[exp.num[0]].data;
-			break;
-		case 39:
-			if (reg[exp.num[0]].occupied == 1) {
-				pipeline_state[2] = 2;
-				return;
-			}
-			reg[31].occupied = 1;
-			n1 = reg[exp.num[0]].data;
-			break;
-		case 40: case 41: case 42: case 43:
-			if (exp.expstate[1] == isreg && reg[exp.num[1]].occupied == 1) {
-				pipeline_state[2] = 2;
-				return;
-			}
-			n1 = exp.num[0];
-			reg[n1].occupied = 1;
-			break;
-		case 44: case 45: case 46:
-			if (reg[exp.num[0]].occupied == 1) {
-				pipeline_state[2] = 2;
-				return;
-			}
-			if (exp.expstate[1] == isreg && reg[exp.num[1]].occupied == 1) {
-				pipeline_state[2] = 2;
-				return;
-			}
-			n1 = reg[exp.num[0]].data;
-			break;
-		case 47:
-			if (reg[exp.num[1]].occupied == 1) {
-				pipeline_state[2] = 2;
-				return;
-			}
-			n1 = exp.num[0];
-			reg[n1].occupied = 1;
-			n2 = exp.num[1];
-			break;
-		case 48:
-			if (reg[32].occupied == 1) {
-				pipeline_state[2] = 2;
-				return;
-			}
-			n1 = exp.num[0];
-			reg[n1].occupied = 1;
-			break;
-		case 49:
-			if (reg[33].occupied == 1) {
-				pipeline_state[2] = 2;
-				return;
-			}
-			n1 = exp.num[0];
-			reg[n1].occupied = 1;
-			break;
-		case 50:
-			break;
-		case 51:
-			if (reg[2].occupied == 1) {
-				pipeline_state[2] = 2;
-				return;
-			}
-			switch (reg[2].data) {
-			case 0:
-				pipeline_state[2] = 2;
-				return;
-			case 1:
-				if (reg[4].occupied == 1) {
-					pipeline_state[2] = 2;
-					return;
-				}
-				n1 = reg[4].data;
-
-				break;
-			case 4:
-				if (reg[4].occupied == 1) {
-					pipeline_state[2] = 2;
-					return;
-				}
-				n1 = reg[4].data;
-				break;
-			case 5:
-				reg[2].occupied = 1;
-				break;
-			case 8:
-				if (reg[4].occupied == 1) {
-					pipeline_state[2] = 2;
-					return;
-				}
-				if (reg[5].occupied == 1) {
-					pipeline_state[2] = 2;
-					return;
-				}
-				n1 = reg[4].data;
-				n2 = reg[5].data;
-				break;
-			case 9:
-				if (reg[4].occupied == 1) {
-					pipeline_state[2] = 2;
-					return;
-				}
-				n1 = reg[4].data;
-				reg[2].occupied = 1;
-				break;
-			case 10:
-				break;
-			case 17:
-				if (reg[4].occupied == 1) {
-					pipeline_state[2] = 2;
-					return;
-				}
-				n1 = reg[4].data;
-				break;
-			}
-			break;
-		case 52: case 53: case 54: case 55:
-			if (reg[exp.num[0]].occupied == 1) {
-				pipeline_state[2] = 2;
-				return;
-			}
-			if (reg[exp.num[1]].occupied == 1) {
-				pipeline_state[2] = 2;
-				return;
-			}
-			n1 = reg[exp.num[0]].data;
-			n2 = reg[exp.num[1]].data;
-			reg[32].occupied = 1;
-			reg[33].occupied = 1;
-			break;
-		}
-		/*if (exp.op >= 1 && exp.op <= 13) {
+		if (exp.op >= 1 && exp.op <= 13) {
 			if (reg[exp.num[1]].occupied == 1) {
 				pipeline_state[2] = 2;
 				return;
@@ -329,12 +147,9 @@ public:
 			n1 = reg[exp.num[0]].data;
 			n2 = exp.num[1];
 		}
-		else if (exp.op >= 35 && exp.op <= 36) {
-			n1 = exp.num[0];
-		}
-		else if (exp.op == 37) {
+		else if (exp.op >= 35 && exp.op <= 36) {}
+		else if (exp.op == 37) { 
 			reg[31].occupied = 1;
-			n1 = exp.num[0];
 		}
 		else if (exp.op == 38) {
 			if (reg[exp.num[0]].occupied == 1) {
@@ -467,11 +282,13 @@ public:
 			n2 = reg[exp.num[1]].data;
 			reg[32].occupied = 1;
 			reg[33].occupied = 1;
-		}*/
+		}
 
 		pipeline_state[2] = 1;
+
 		return;
 	}
+
 	void Execution() {
 		step = 3;
 		switch (exp.op) {
@@ -543,135 +360,273 @@ public:
 			break;
 		case 23:
 			if (n1 == n2) {
-				jump = 1;
-				tarline = n3;
+				if (predictor[predictor_num[nowline]].take()) {
+					++predictor[predictor_num[nowline]];
+				}
+				else {
+					++predictor[predictor_num[nowline]];
+					pipeline_state[6] = 0;
+					reg[34].data = exp.num[2];
+				}
 			}
 			else {
-				pipeline_state[0] = 1;
-				reg[34].data++;
+				if (!predictor[predictor_num[nowline]].take()) {
+					--predictor[predictor_num[nowline]];
+				}
+				else {
+					pipeline_state[6] = 0;
+					--predictor[predictor_num[nowline]];
+					reg[34].data = nowline + 1;
+				}
 			}
 			break;
 		case 24:
 			if (n1 != n2) {
-				jump = 1;
-				tarline = n3;
+				if (predictor[predictor_num[nowline]].take()) {
+					++predictor[predictor_num[nowline]];
+				}
+				else {
+					++predictor[predictor_num[nowline]];
+					pipeline_state[6] = 0;
+					reg[34].data = exp.num[2];
+				}
 			}
 			else {
-				pipeline_state[0] = 1;
-				reg[34].data++;
+				if (!predictor[predictor_num[nowline]].take()) {
+					--predictor[predictor_num[nowline]];
+				}
+				else {
+					pipeline_state[6] = 0;
+					--predictor[predictor_num[nowline]];
+					reg[34].data = nowline + 1;
+				}
 			}
 			break;
 		case 25:
 			if (n1 >= n2) {
-				jump = 1;
-				tarline = n3;
+				if (predictor[predictor_num[nowline]].take()) {
+					++predictor[predictor_num[nowline]];
+				}
+				else {
+					++predictor[predictor_num[nowline]];
+					pipeline_state[6] = 0;
+					reg[34].data = exp.num[2];
+				}
 			}
 			else {
-				pipeline_state[0] = 1;
-				reg[34].data++;
+				if (!predictor[predictor_num[nowline]].take()) {
+					--predictor[predictor_num[nowline]];
+				}
+				else {
+					pipeline_state[6] = 0;
+					--predictor[predictor_num[nowline]];
+					reg[34].data = nowline + 1;
+				}
 			}
 			break;
 		case 26:
 			if (n1 <= n2) {
-				jump = 1;
-				tarline = n3;
+				if (predictor[predictor_num[nowline]].take()) {
+					++predictor[predictor_num[nowline]];
+				}
+				else {
+					++predictor[predictor_num[nowline]];
+					pipeline_state[6] = 0;
+					reg[34].data = exp.num[2];
+				}
 			}
 			else {
-				pipeline_state[0] = 1;
-				reg[34].data++;
+				if (!predictor[predictor_num[nowline]].take()) {
+					--predictor[predictor_num[nowline]];
+				}
+				else {
+					pipeline_state[6] = 0;
+					--predictor[predictor_num[nowline]];
+					reg[34].data = nowline + 1;
+				}
 			}
 			break;
 		case 27:
 			if (n1 > n2) {
-				jump = 1;
-				tarline = n3;
+				if (predictor[predictor_num[nowline]].take()) {
+					++predictor[predictor_num[nowline]];
+				}
+				else {
+					++predictor[predictor_num[nowline]];
+					pipeline_state[6] = 0;
+					reg[34].data = exp.num[2];
+				}
 			}
 			else {
-				pipeline_state[0] = 1;
-				reg[34].data++;
+				if (!predictor[predictor_num[nowline]].take()) {
+					--predictor[predictor_num[nowline]];
+				}
+				else {
+					pipeline_state[6] = 0;
+					--predictor[predictor_num[nowline]];
+					reg[34].data = nowline + 1;
+				}
 			}
 			break;
 		case 28:
 			if (n1 < n2) {
-				jump = 1;
-				tarline = n3;
+				if (predictor[predictor_num[nowline]].take()) {
+					++predictor[predictor_num[nowline]];
+				}
+				else {
+					++predictor[predictor_num[nowline]];
+					pipeline_state[6] = 0;
+					reg[34].data = exp.num[2];
+				}
 			}
 			else {
-				pipeline_state[0] = 1;
-				reg[34].data++;
+				if (!predictor[predictor_num[nowline]].take()) {
+					--predictor[predictor_num[nowline]];
+				}
+				else {
+					pipeline_state[6] = 0;
+					--predictor[predictor_num[nowline]];
+					reg[34].data = nowline + 1;
+				}
 			}
 			break;
 		case 29:
 			if (n1 == 0) {
-				jump = 1;
-				tarline = n2;
+				if (predictor[predictor_num[nowline]].take()) {
+					++predictor[predictor_num[nowline]];
+				}
+				else {
+					++predictor[predictor_num[nowline]];
+					pipeline_state[6] = 0;
+					reg[34].data = exp.num[1];
+				}
 			}
 			else {
-				pipeline_state[0] = 1;
-				reg[34].data++;
+				if (!predictor[predictor_num[nowline]].take()) {
+					--predictor[predictor_num[nowline]];
+				}
+				else {
+					pipeline_state[6] = 0;
+					--predictor[predictor_num[nowline]];
+					reg[34].data = nowline + 1;
+				}
 			}
 			break;
 		case 30:
 			if (n1 != 0) {
-				jump = 1;
-				tarline = n2;
+				if (predictor[predictor_num[nowline]].take()) {
+					++predictor[predictor_num[nowline]];
+				}
+				else {
+					++predictor[predictor_num[nowline]];
+					pipeline_state[6] = 0;
+					reg[34].data = exp.num[1];
+				}
 			}
 			else {
-				pipeline_state[0] = 1;
-				reg[34].data++;
+				if (!predictor[predictor_num[nowline]].take()) {
+					--predictor[predictor_num[nowline]];
+				}
+				else {
+					pipeline_state[6] = 0;
+					--predictor[predictor_num[nowline]];
+					reg[34].data = nowline + 1;
+				}
 			}
 			break;
 		case 31:
 			if (n1 <= 0) {
-				jump = 1;
-				tarline = n2;
+				if (predictor[predictor_num[nowline]].take()) {
+					++predictor[predictor_num[nowline]];
+				}
+				else {
+					++predictor[predictor_num[nowline]];
+					pipeline_state[6] = 0;
+					reg[34].data = exp.num[1];
+				}
 			}
 			else {
-				pipeline_state[0] = 1;
-				reg[34].data++;
+				if (!predictor[predictor_num[nowline]].take()) {
+					--predictor[predictor_num[nowline]];
+				}
+				else {
+					pipeline_state[6] = 0;
+					--predictor[predictor_num[nowline]];
+					reg[34].data = nowline + 1;
+				}
 			}
 			break;
 		case 32:
 			if (n1 >= 0) {
-				jump = 1;
-				tarline = n2;
+				if (predictor[predictor_num[nowline]].take()) {
+					++predictor[predictor_num[nowline]];
+				}
+				else {
+					++predictor[predictor_num[nowline]];
+					pipeline_state[6] = 0;
+					reg[34].data = exp.num[1];
+				}
 			}
 			else {
-				pipeline_state[0] = 1;
-				reg[34].data++;
+				if (!predictor[predictor_num[nowline]].take()) {
+					--predictor[predictor_num[nowline]];
+				}
+				else {
+					pipeline_state[6] = 0;
+					--predictor[predictor_num[nowline]];
+					reg[34].data = nowline + 1;
+				}
 			}
 			break;
 		case 33:
 			if (n1 > 0) {
-				jump = 1;
-				tarline = n2;
+				if (predictor[predictor_num[nowline]].take()) {
+					++predictor[predictor_num[nowline]];
+				}
+				else {
+					++predictor[predictor_num[nowline]];
+					pipeline_state[6] = 0;
+					reg[34].data = exp.num[1];
+				}
 			}
 			else {
-				pipeline_state[0] = 1;
-				reg[34].data++;
+				if (!predictor[predictor_num[nowline]].take()) {
+					--predictor[predictor_num[nowline]];
+				}
+				else {
+					pipeline_state[6] = 0;
+					--predictor[predictor_num[nowline]];
+					reg[34].data = nowline + 1;
+				}
 			}
 			break;
 		case 34:
 			if (n1 < 0) {
-				jump = 1;
-				tarline = n2;
+				if (predictor[predictor_num[nowline]].take()) {
+					++predictor[predictor_num[nowline]];
+				}
+				else {
+					++predictor[predictor_num[nowline]];
+					pipeline_state[6] = 0;
+					reg[34].data = exp.num[1];
+				}
 			}
 			else {
-				pipeline_state[0] = 1;
-				reg[34].data++;
+				if (!predictor[predictor_num[nowline]].take()) {
+					--predictor[predictor_num[nowline]];
+				}
+				else {
+					pipeline_state[6] = 0;
+					--predictor[predictor_num[nowline]];
+					reg[34].data = nowline + 1;
+				}
 			}
 			break;
 		case 35:
-			jump = 1;
-			tarline = n1;
 			break;
 		case 36:
-			jump = 1;
-			tarline = n1;
 			break;
 		case 37:
-			jump = 1;
-			tarline = n1;
 			break;
 		case 38:
 			jump = 1;
@@ -743,60 +698,57 @@ public:
 			hinum = n1 % n2;
 			break;
 		}
+
 		pipeline_state[3] = 1;
+
 		return;
 	}
+
 	void Memory_Access() {
 		step = 4;
 		pipeline_state[4] = 1;
 
-		if (exp.op == 40) {
+		switch (exp.op) {
+		case 40:
 			ans = n2;
 			return;
-		}
-		else if (exp.op == 41) {
+		case 41:
 			byte = mem[n2];
 			return;
-		}
-		else if (exp.op == 42) {
-			char tmp[2];
-			tmp[0] = mem[n2];
-			tmp[1] = mem[n2 + 1];
-			half = *(reinterpret_cast<short*>(tmp));
+		case 42:
+			char tmp2[2];
+			tmp2[0] = mem[n2];
+			tmp2[1] = mem[n2 + 1];
+			half = *(reinterpret_cast<short*>(tmp2));
 			return;
-		}
-		else if (exp.op == 43) {
-			char tmp[4];
-			tmp[0] = mem[n2];
-			tmp[1] = mem[n2 + 1];
-			tmp[2] = mem[n2 + 2];
-			tmp[3] = mem[n2 + 3];
-			word = *(reinterpret_cast<int*>(tmp));
+		case 43:
+			char tmp4[4];
+			tmp4[0] = mem[n2];
+			tmp4[1] = mem[n2 + 1];
+			tmp4[2] = mem[n2 + 2];
+			tmp4[3] = mem[n2 + 3];
+			word = *(reinterpret_cast<int*>(tmp4));
 			return;
-		}
-		else if (exp.op == 44) {
+		case 44:
 			mem[n2] = (char)n1;
 			return;
-		}
-		else if (exp.op == 45) {
+		case 45:
 			mem[n2] = (char)n1;
 			mem[n2 + 1] = (char)(n1 >> 8);
 			return;
-		}
-		else if (exp.op == 46) {
+		case 46:
 			mem[n2] = (char)n1;
 			mem[n2 + 1] = (char)(n1 >> 8);
 			mem[n2 + 2] = (char)(n1 >> 16);
 			mem[n2 + 3] = (char)(n1 >> 24);
-
 			return;
-		}
-		else if (exp.op == 51) {
+		case 51:
 			if (reg[2].data == 4) {
 				for (int i = n1; ; i++) {
 					if (mem[i] == 0) break;
 					else cout << mem[i];
 				}
+				return;
 			}
 			else if (reg[2].data == 8) {
 				string tmp;
@@ -806,16 +758,20 @@ public:
 					mem[now_pos++] = tmp[i];
 				}
 				mem[now_pos++] = '\0';
+				return;
 			}
 			else if (reg[2].data == 9) {
 				ans = mem_pos;
 				mem_pos += n1;
+				return;
 			}
 		}
-		else pipeline_state[4] = 0;
+
+		pipeline_state[4] = 0;
 
 		return;
 	}
+
 	void Write_Back() {
 		step = 5;
 		if (jump) {
@@ -898,15 +854,9 @@ public:
 			reg[33].data = lonum;
 			reg[33].occupied = 0;
 		}
-		pipeline_state[5] = 1;
-		return;
-	}
 
-	void Start_Next_Process() {
-		if (step == 1) Instruction_Decode_And_Data_Preparation();
-		else if (step == 2) Execution();
-		else if (step == 3) Memory_Access();
-		else if (step == 4) Write_Back();
+		pipeline_state[5] = 1;
+
 		return;
 	}
 

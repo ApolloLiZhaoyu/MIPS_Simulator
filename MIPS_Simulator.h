@@ -9,7 +9,7 @@
 #include <cmath>
 #include <thread>
 #include "Parser.h"
-#include "pipeline.h"
+#include "Pipeline.h"
 #include "TokenScanner.h"
 
 #define Max_Size 4 * 1024 * 1024
@@ -19,6 +19,7 @@ using namespace std;
 extern char *mem;
 extern int mem_pos;
 extern map <string, int> op_num;
+extern map <int, int> predict_num;
 
 class MIPS_Simulator_Class {
 private:
@@ -61,7 +62,7 @@ public:
 		else if (token == ".align") {
 			int n = get_num(str, pos);
 			int pow = 1 << n;
-			int k = ceil( (double) mem_pos / pow);
+			int k = ceil((double)mem_pos / pow);
 			mem_pos = k * pow;
 			return;
 		}
@@ -90,9 +91,8 @@ public:
 		else if (token == ".half") {
 			while (pos < str.length()) {
 				short n = get_short(str, pos);
-				char c[2];
-				c[0] = mem[mem_pos++] = (char)n;
-				c[1] = mem[mem_pos++] = (char)(n >> 8);
+				mem[mem_pos++] = (char)n;
+				mem[mem_pos++] = (char)(n >> 8);
 			}
 			return;
 		}
@@ -137,9 +137,9 @@ public:
 	}
 
 	void interprete_codeline() {
-		//for (auto x : codeline) cout << x << '\n';
-
-		for (auto &str : codeline) {
+		//for (auto &x : codeline) cout << x << '\n';
+		for (int i = 0; i < codeline.size(); i++) {
+			string &str = codeline[i];
 
 			TokenScanner nowline;
 
@@ -211,6 +211,8 @@ public:
 				}
 				nowline.num[2] = label[r3];
 				nowline.expstate[2] = islab;
+				predictor_num[i] = predictor.size();
+				predictor.push_back(Predictor());
 			}
 			else if (nowline.op >= 29 && nowline.op <= 34) {
 				nowline.num[0] = regname[r1];
@@ -218,6 +220,8 @@ public:
 				nowline.num[1] = label[r2];
 				nowline.expstate[1] = islab;
 				nowline.expstate[2] = none;
+				predictor_num[i] = predictor.size();
+				predictor.push_back(Predictor());
 			}
 			else if (nowline.op >= 35 && nowline.op <= 37) {
 				nowline.num[0] = label[r1];
@@ -331,34 +335,44 @@ public:
 
 		bool run = 1, stop = 0;
 
-		while(run) {
-			//cout << "Á÷Ë®ÏßÖÐÓÐ " << five_pipeline.size() << "ÌõÓï¾ä!!!" << endl;
+		while (run) {
+			//cout << "流水线中有 " << five_pipelines.size() << "条语句!!!" << endl;
 
 			pipeline_state[4] = 0;
 
-			for (auto &nowpipe : five_pipelines) {
+			for(int i = 0; i < five_pipelines.size(); i++){
+				Pipeline_Class &nowpipe = five_pipelines[i];
 				//cout << nowpipe.nowline << endl;
-				//cout << codeline[nowpipe.nowline] << endl;
-				switch (nowpipe.step) {
-				case 4:
+			    //cout << codeline[nowpipe.nowline] << endl;
+				if (nowpipe.step == 4) {
 					nowpipe.Write_Back();
 					//cout << "Finish Write_Back !!!" << endl;
-					//cout << "pipeline_state[5] = " << pipeline_state[5] << endl;
 					five_pipelines.pop_front();
-					break;
-				case 3:
+					i--;
+				}
+				else if (nowpipe.step == 3) {
 					nowpipe.Memory_Access();
 					//cout << "Finish Memory_Access !!!" << endl;
-					break;
-				case 2:
+				}
+				else if (nowpipe.step == 2) {
 					nowpipe.Execution();
 					if (nowpipe.state == 0) {
 						run = 0;
 						break;
 					}
+					if (pipeline_state[6] == 0) {
+						int cnt = five_pipelines.size() - i - 1;
+						while (cnt--) {
+							//cout << "分支错误: 踢出" << codeline[five_pipelines[i + cnt + 1].nowline] << endl;
+							five_pipelines.pop_back();
+						}
+						pipeline_state[0] = 1;
+						pipeline_state[6] = 1;
+						stop = 0;
+					}
 					//cout << "Finish Execution !!!" << endl;
-					break;
-				case 1:
+				}
+				else if (nowpipe.step == 1) {
 					nowpipe.Instruction_Decode_And_Data_Preparation();
 					if (pipeline_state[2] == 2) {
 						nowpipe.step = 1;
@@ -366,7 +380,6 @@ public:
 						//cout << "Stop Instruction_Decode_And_Data_Preparation !!!" << endl;
 					}
 					//else cout << "Finish Instruction_Decode_And_Data_Preparation !!!" << endl;
-					break;
 				}
 			}
 
@@ -379,21 +392,21 @@ public:
 				//cout << "Finish Instruction_Fetch !!!" << endl;
 			}
 
-			if(stop) stop = 0;
+			if (stop) stop = 0;
 		}
 		return;
 	}
 
 	inline bool isregname(string &str) {
 		for (int i = 0; i < str.length(); i++) {
-			if(str[i] == '$') return true;
+			if (str[i] == '$') return true;
 		}
 		return false;
 	}
 
 	inline bool haveop(string &str) {
 		for (int i = 0; i < str.length(); i++) {
-			if(str[i] == '(') return true;
+			if (str[i] == '(') return true;
 		}
 		return false;
 	}
